@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entities xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/entity-definition-2.1.xsd">
+
+    <entity entity-name="AuthContactMech" package="bf.auth">
+        <field name="contactMechId" type="id" is-pk="true"/>
+        <field name="providerId" type="text-medium"/>
+        <field name="providerJson" type="text-very-long"/>
+        <relationship type="one" related="mantle.party.contact.ContactMech"/>
+        <relationship type="many" related="mantle.party.contact.ContactMech"/>
+        <relationship type="many" related="bf.auth.AuthContactMechs" short-alias="authContactMechs">
+            <key-map fieldName="contactMechId" related="authContactMechId"/>
+        </relationship>
+    </entity>
+    <entity entity-name="AuthContactMechs" package="bf.auth">
+        <field name="authContactMechId" type="id" is-pk="true"/>
+        <field name="contactMechId" type="id" is-pk="true"/>
+        <field name="contactMechPurposeId" type="id" is-pk="true"/>
+        <field name="fromDate" type="date-time" is-pk="true"/>
+        <field name="thruDate" type="date-time"/>
+        <relationship type="one" related="bf.auth.AuthContactMech" short-alias="authContactMech">
+            <key-map fieldName="authContactMechId" related="contactMechId"/>
+        </relationship>
+        <relationship type="one" related="mantle.party.contact.ContactMech" short-alias="contactMech" />
+        <relationship type="one" related="mantle.party.contact.ContactMechPurpose" short-alias="contactMechPurpose"/>
+    </entity>
+    <extend-entity entity-name="ContactMech" package="mantle.party.contact">
+        <master>
+            <detail relationship="authContactMech"/>
+        </master>
+        <seed-data>
+            <moqui.basic.EnumerationType description="PassportJS Provider" enumTypeId="PJSContactMech"/>
+            <moqui.basic.Enumeration description="PassportJS Provider" enumId="PJSContactMech" enumTypeId="ContactMechType" parentEnumId="CmtElectronicAddress"/>
+            <moqui.basic.Enumeration description="Facebook" enumCode="facebook" enumId="PJS_FACEBOOK" enumTypeId="PJSContactMech" parentEnumId="PJSContactMech"/>
+        </seed-data>
+    </extend-entity>
+    <extend-entity entity-name="ContactMechPurpose" package="mantle.party.contact">
+        <seed-data>
+            <mantle.party.contact.ContactMechPurpose description="Authentication" contactMechPurposeId="BF_AUTH" contactMechTypeEnumId="PJSContactMech"/>
+        </seed-data>
+    </extend-entity>
+
+
+    <view-entity entity-name="PartyAuthContactMech" package="bf.auth">
+        <member-entity entity-alias="PCM" entity-name="mantle.party.contact.PartyContactMech"/>
+        <member-entity entity-alias="ACM" entity-name="bf.auth.AuthContactMech" join-from-alias="PCM">
+            <key-map field-name="contactMechId"/></member-entity>
+        <alias-all entity-alias="PCM"/>
+        <alias-all entity-alias="ACM"/>
+    </view-entity>
+
+</entities>
