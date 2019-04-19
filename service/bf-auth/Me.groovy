@@ -45,6 +45,9 @@ if (providerContactMechs.isEmpty()) {
     partyId = null
     return
 }
+
+// TODO: use the normalized data structures, not the json
+
 for (EntityValue providerContactMech: providerContactMechs) {
     Map<String, Object> providerData = new JsonSlurper().parseText(providerContactMech.providerJson)
     logger.info('providerData:' + providerData)

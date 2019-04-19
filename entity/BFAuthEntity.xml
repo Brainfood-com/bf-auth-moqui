@@ -9,9 +9,18 @@
         <relationship type="one" related="mantle.party.contact.ContactMech"/>
         <relationship type="many" related="mantle.party.contact.ContactMech"/>
         <relationship type="many" related="bf.auth.AuthContactMechs" short-alias="authContactMechs">
-            <key-map fieldName="contactMechId" related="authContactMechId"/>
+            <key-map field-name="contactMechId" related="authContactMechId"/>
         </relationship>
     </entity>
+    <view-entity entity-name="AuthContactMechInfo" package="bf.auth">
+        <member-entity entity-alias="ACM" entity-name="bf.auth.AuthContactMech"/>
+        <member-entity entity-alias="CM" entity-name="mantle.party.contact.ContactMech" join-from-alias="ACM">
+            <key-map field-name="contactMechId"/></member-entity>
+        <alias-all entity-alias="ACM"/>
+        <alias-all entity-alias="CM"/>
+        <relationship type="one" related="bf.auth.AuthContactMech"/>
+    </view-entity>
+
     <entity entity-name="AuthContactMechs" package="bf.auth">
         <field name="authContactMechId" type="id" is-pk="true"/>
         <field name="contactMechId" type="id" is-pk="true"/>
@@ -19,11 +28,18 @@
         <field name="fromDate" type="date-time" is-pk="true"/>
         <field name="thruDate" type="date-time"/>
         <relationship type="one" related="bf.auth.AuthContactMech" short-alias="authContactMech">
-            <key-map fieldName="authContactMechId" related="contactMechId"/>
+            <key-map field-name="authContactMechId" related="contactMechId"/>
         </relationship>
         <relationship type="one" related="mantle.party.contact.ContactMech" short-alias="contactMech" />
         <relationship type="one" related="mantle.party.contact.ContactMechPurpose" short-alias="contactMechPurpose"/>
     </entity>
+    <view-entity entity-name="AuthContactMechsInfo" package="bf.auth">
+        <member-entity entity-alias="ACM" entity-name="bf.auth.AuthContactMechs"/>
+        <member-entity entity-alias="CM" entity-name="mantle.party.contact.ContactMech" join-from-alias="ACM">
+            <key-map field-name="contactMechId"/></member-entity>
+        <alias-all entity-alias="ACM"/>
+        <alias-all entity-alias="CM"/>
+    </view-entity>
     <extend-entity entity-name="ContactMech" package="mantle.party.contact">
         <master>
             <detail relationship="authContactMech"/>
@@ -39,7 +55,6 @@
             <mantle.party.contact.ContactMechPurpose description="Authentication" contactMechPurposeId="BF_AUTH" contactMechTypeEnumId="PJSContactMech"/>
         </seed-data>
     </extend-entity>
-
 
     <view-entity entity-name="PartyAuthContactMech" package="bf.auth">
         <member-entity entity-alias="PCM" entity-name="mantle.party.contact.PartyContactMech"/>

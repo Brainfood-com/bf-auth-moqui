@@ -29,11 +29,6 @@ Logger logger = LoggerFactory.getLogger("AttachAccount")
 logger.info('AttachAccount.groovy')
 
 logger.info('profiles:' + context.profiles)
-/*
-    <moqui.basic.EnumerationType description="PassportJS Provider" enumTypeId="PJSContactMech"/>
-    <moqui.basic.Enumeration description="PassportJS Provider" enumId="PJSContactMech" enumTypeId="ContactMechType" parentEnumId="CmtElectronicAddress"/>
-    <moqui.basic.Enumeration description="Facebook" enumCode="facebook" enumId="PJS_FACEBOOK" enumTypeId="PJSContactMech" parentEnumId="PJSContactMech"/>
-*/
 
 ExecutionContext ec = context.ec
 Map<String, Map<String, Object>> parsedProviderData = [:]
@@ -65,45 +60,74 @@ for (Map<String, Object> profileData: context.profiles) {
     parsedProfileData.enumeration = providerEnumeration
     //providerToEnumerationId[name] = providerEnumeration.enumId
 
-    EntityValue providerContactMech = ec.entity.find('bf.auth.AuthContactMech').condition([
+    EntityValue providerContactMech
+    EntityValue providerContactMechInfo = ec.entity.find('bf.auth.AuthContactMechInfo').condition([
         contactMechTypeEnumId: providerEnumeration.enumId,
         providerId: id,
     ]).useCache(false).one()
-    if (!providerContactMech) {
+    if (providerContactMechInfo) {
+        providerContactMech = providerContactMechInfo.findRelatedOne('bf.auth.AuthContactMech', false, true)
+    } else {
         EntityValue baseContactMech = ec.entity.makeValue('mantle.party.contact.ContactMech').setAll([
             contactMechTypeEnumId: providerEnumeration.enumId,
         ]).setSequencedIdPrimary().createOrUpdate()
         providerContactMech = ec.entity.makeValue('bf.auth.AuthContactMech').setAll([
             contactMechId: baseContactMech.contactMechId,
-            contactMechTypeEnumId: providerEnumeration.enumId,
+            //contactMechTypeEnumId: providerEnumeration.enumId,
             providerId: id,
         ])
     }
-//]).useCache(true).conditionDate('fromDate', 'thruDate', ec.user.nowTimestamp).list()
-    if (providerContactMech.providerJson) {
-        Map<String, Object> oldProfile = new JsonSlurper().parseText(providerContactMech.providerJson)
-        Set<String> oldEmailSet = []
-        for (Map<String, Object> oldProfileEmail: oldProfile.emails) {
-            oldEmailSet.add(oldProfileEmail.value)
-        }
-        Set<String> oldEmailSet = []
-        for (Map<String, Object> profileEmail: profile.emails) {
-            oldEmailSet.remove(profileEmail.value)
-        }
-        // oldEmailSet contains emails that are not in the new profile info
-        // any new emails will be attached later on
-        EntityFind pcmiFind = ec.entity.find('bf.auth.AuthContactMechs').condition([
-            contactMechTypeEnumId: 'CmtEmailAddress',
-            contactMechPurposeId: 'BF_AUTH',
-        ]).condition(ec.conditionFactory.makeCondition('infoString', EntityCondition.Operator.IN, oldEmailSet)).conditionDate('fromDate', 'thruDate', ec.user.nowTimestamp)
-        EntityList oldEmailCMs = pcmiFind.list()
-        for (EntityValue oldEmailCM: oldEmailCMs) {
-            oldEmailCM.thruDate = ec.user.nowTimestamp
-            oldEmailCM.update()
-        }
-    }
     providerContactMech.providerJson = JsonOutput.toJson(profileData)
     providerContactMech.createOrUpdate()
+//]).useCache(true).conditionDate('fromDate', 'thruDate', ec.user.nowTimestamp).list()
+    EntityFind acmsFind = ec.entity.find('bf.auth.AuthContactMechsInfo').condition([
+        authContactMechID: providerContactMech.contactMechId,
+        //contactMechTypeEnumId: 'CmtEmailAddress',
+        contactMechPurposeId: 'BF_AUTH',
+    ]).conditionDate('fromDate', 'thruDate', ec.user.nowTimestamp)
+
+    Set<String> newEmailSet = []
+    for (Map<String, Object> profileEmail: profile.emails) {
+        newEmailSet.add(profileEmail.value)
+    }
+    logger.info('newEmailSet:' + newEmailSet)
+
+    EntityList acmsValues = acmsFind.list()
+    for (EntityValue acmsValue: acmsValues) {
+        switch (acmsValue.contactMechTypeEnumId) {
+            case 'CmtEmailAddress':
+                if (!newEmailSet.remove(acmsValue.infoString)) {
+                    // existing email in database is not in the new set from the provider,
+                    ec.entity.find('bf.auth.AuthContactMechs').condition([
+                        authContactMechId: providerContactMech.contactMechId,
+                        contactMechId: acmsValue.contactMechId,
+                        contactMechPurposeId: 'BF_AUTH',
+                        fromDate: acmsValue.fromDate,
+                    ]).updateAll([thruDate: ec.user.nowTimestamp])
+                }
+                break
+        }
+    }
+
+    for (String newEmail: newEmailSet) {
+        EntityValue emailCM = ec.entity.find('mantle.party.contact.ContactMech').condition([
+            contactMechTypeEnumId: 'CmtEmailAddress',
+            infoString: newEmail,
+        ]).one()
+        if (!emailCM) {
+            emailCM = ec.entity.makeValue('mantle.party.contact.ContactMech').setAll([
+                contactMechTypeEnumId: 'CmtEmailAddress',
+                infoString: newEmail,
+            ]).setSequencedIdPrimary().createOrUpdate()
+        }
+        ec.entity.makeValue('bf.auth.AuthContactMechs').setAll([
+            authContactMechId: providerContactMech.contactMechId,
+            contactMechId: emailCM.contactMechId,
+            contactMechPurposeId: 'BF_AUTH',
+            fromDate: ec.user.nowTimestamp,
+        ]).createOrUpdate()
+    }
+
     parsedProfileData.contactMech = providerContactMech
     //providerToContactMechId[name] = providerContactMech.contactMechId
 
@@ -119,15 +143,6 @@ for (Map<String, Object> profileData: context.profiles) {
 
     parsedProviderData[name] = parsedProfileData
 }
-
-/*
-PartyContent
-    .partyId
-    .partyContentTypeEnumId = 'PcntFaceImage'
-    .contentLocation = $url
-Person
-    .nickName = $displayName
-*/
 
 logger.info('given partyId: ' + partyId)
 if (partyId == null) {
@@ -152,35 +167,6 @@ if (partyId == null) {
 } else {
     person = ec.entity.find('Person').condition('partyId', partyId).one()
 }
-
-/*
-    <entity entity-name="AuthContactMech" package="bf.auth">
-        <field name="contactMechId" type="id" is-pk="true"/>
-        <field name="providerId" type="text-medium"/>
-        <field name="providerJson" type="text-very-long"/>
-        <relationship type="one" related="mantle.party.contact.ContactMech"/>
-        <relationship type="many" related="mantle.party.contact.ContactMech"/>
-        <relationship type="many" related="bf.auth.AuthContactMechs" short-alias="authContactMechs">
-            <key-map fieldName="contactMechId" related="authContactMechId"/>
-        </relationship>
-    </entity>
-    <entity entity-name="AuthContactMechs" package="bf.auth">
-        <field name="authContactMechId" type="id" is-pk="true"/>
-        <field name="contactMechId" type="id" is-pk="true"/>
-        <field name="contactMechPurposeId" type="id" is-pk="true"/>
-        <field name="fromDate" type="date-time" is-pk="true"/>
-        <field name="thruDate" type="date-time"/>
-        <relationship type="one" related="bf.auth.AuthContactMech" short-alias="authContactMech">
-            <key-map fieldName="authContactMechId" related="contactMechId"/>
-        </relationship>
-        <relationship type="one" related="mantle.party.contact.ContactMech" short-alias="contactMech" />
-        <relationship type="one" related="mantle.party.contact.ContactMechPurpose" short-alias="contactMechPurpose"/>
-    </entity>
-    for (Map<String, Object> profileEmail: profile.emails) {
-        emailSet.add(profileEmail.value)
-    }
-*/
-
 
 for (Map<String, Object> parsedProfileData: parsedProviderData.values()) {
     String name = parsedProfileData.name
@@ -217,27 +203,6 @@ for (Map<String, Object> parsedProfileData: parsedProviderData.values()) {
                 contactMechPurposeId: 'BF_AUTH',
                 fromDate: ec.user.nowTimestamp,
             ]).createOrUpdate()
-
-            Set<String> profileEmails = []
-            for (Map<String, Object> profileEmail: profile.emails) {
-                profileEmails.add(profileEmail.value)
-            }
-
-
-        // oldEmailSet contains emails that are not in the new profile info
-        // any new emails will be attached later on
-        EntityFind pcmiFind = ec.entity.find('mantle.party.contact.PartyContactMechInfo').condition([
-            contactMechTypeEnumId: 'CmtEmailAddress',
-            contactMechPurposeId: 'BF_AUTH',
-        ]).condition(ec.conditionFactory.makeCondition('infoString', EntityCondition.Operator.IN, oldEmailSet)).conditionDate('fromDate', 'thruDate', ec.user.nowTimestamp)
-        EntityList oldEmailCMs = pcmiFind.list()
-        for (EntityValue oldEmailCM: oldEmailCMs) {
-            oldEmailCM.thruDate = ec.user.nowTimestamp
-            oldEmailCM.update()
-        }
-
-
-
         }
     } else {
         // no mapping for this provider, connect it
@@ -252,33 +217,80 @@ for (Map<String, Object> parsedProfileData: parsedProviderData.values()) {
 
 person.createOrUpdate()
 
+for (String foundPartyId: foundPartyIds) {
+    logger.info('process party:' + foundPartyId)
+    // Find all the providers for this party
+    EntityList partyProviderValues = ec.entity.find('bf.auth.PartyAuthContactMech').condition('partyId', foundPartyId).conditionDate('fromDate', 'thruDate', ec.user.nowTimestamp).list()
 
+    Set<String> allPhotos = []
 
+    // coalesce the emails(multiple providers might have the same email registered
+    Map<String, String> emailToCMId = [:]
+    for (EntityValue partyProviderValue: partyProviderValues) {
+        logger.info('provider:' + partyProviderValue)
+        Map<String, Object> providerData = new JsonSlurper().parseText(partyProviderValue.providerJson)
+        Map<String, Object> profile = providerData.profile
 
+        EntityList providerCMs = ec.entity.find('bf.auth.AuthContactMechsInfo').condition([
+            authContactMechId: partyProviderValue.contactMechId,
+        ]).conditionDate('fromDate', 'thruDate', ec.user.nowTimestamp).list()
+        for (EntityValue providerCM: providerCMs) {
+            switch (providerCM.contactMechTypeEnumId) {
+                case 'CmtEmailAddress':
+                    emailToCMId[providerCM.infoString] = providerCM.contactMechId
+                    break
+            }
+        }
 
-/*
-Set<String> emailSet = []
-profilePic = null
-displayName = null
+        for (Map<String, Object> photo: profile.photos) {
+            allPhotos.add(photo.value)
+        }
+    }
+    logger.info('emailToCMId:' + emailToCMId)
 
-if (providerContactMechs.isEmpty()) {
-    partyId = null
-    return
+    EntityList partyCMs = ec.entity.find('mantle.party.contact.PartyContactMechInfo').condition([
+        partyId: foundPartyId,
+        contactMechPurposeId: 'BF_AUTH',
+    ]).conditionDate('fromDate', 'thruDate', ec.user.nowTimestamp).list()
+    for (EntityValue partyCM: partyCMs) {
+        switch (partyCM.contactMechTypeEnumId) {
+            case 'CmtEmailAddress':
+                if (!emailToCMId.remove(partyCM.infoString)) {
+                    ec.entity.find('mantle.party.contact.PartyContactMech').condition([
+                        contactMechId: partyCM.contactMechId,
+                        partyId: partyCM.partyId,
+                        contactMechPurposeId: 'BF_AUTH',
+                        fromDate: partyCM.fromDate,
+                    ]).updateAll([thruDate: ec.user.nowTimestamp])
+                }
+                break
+        }
+    }
+    for (Map.Entry<String, String> emailEntry: emailToCMId.entrySet()) {
+        ec.entity.makeValue('mantle.party.contact.PartyContactMech').setAll([
+            partyId: foundPartyId,
+            contactMechId: emailEntry.value,
+            contactMechPurposeId: 'BF_AUTH',
+            fromDate: ec.user.nowTimestamp,
+        ]).createOrUpdate()
+    }
+
+    EntityList photoValues = ec.entity.find('mantle.party.PartyContent').condition([
+        partyId: foundPartyId,
+        partyContentTypeEnumId: 'PcntPrimaryImage',
+    ]).list()
+    for (EntityValue photoValue: photoValues) {
+        if (!allPhotos.remove(photoValue.contentLocation)) {
+            photoValue.delete()
+        }
+    }
+
+    for (String photo: allPhotos) {
+        ec.entity.makeValue('mantle.party.PartyContent').setAll([
+            partyId: foundPartyId,
+            partyContentTypeEnumId: 'PcntPrimaryImage',
+            contentLocation: photo,
+        ]).setSequencedIdPrimary().createOrUpdate()
+    }
 }
-for (EntityValue providerContactMech: providerContactMechs) {
-    Map<String, Object> providerData = new JsonSlurper().parseText(providerContactMech.providerJson)
-    logger.info('providerData:' + providerData)
-    String providerName = providerData.name
-    Map<String, Object> profile = providerData.profile
-    for (Map<String, Object> profileEmail: profile.emails) {
-        emailSet.add(profileEmail.value)
-    }
-    if (!profilePic && profile.photos) {
-        profilePic = profile.photos[0].value
-    }
-    if (!displayName && profile.displayName) {
-        displayName = profile.displayName
-    }
-}
-emails = (emailSet as List).sort()
-*/
+
