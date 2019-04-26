@@ -2,6 +2,15 @@
 <entities xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/entity-definition-2.1.xsd">
 
+    <entity entity-name="AuthEmailRequest" package="bf.auth">
+        <field name="emailHash" type="text-medium" is-pk="true"/>
+        <field name="emailAddress" type="text-medium"/>
+        <field name="fromDate" type="date-time" is-pk="true"/>
+        <field name="thruDate" type="date-time"/>
+    </entity>
+
+
+
     <entity entity-name="AuthContactMech" package="bf.auth">
         <field name="contactMechId" type="id" is-pk="true"/>
         <field name="providerId" type="text-medium"/>

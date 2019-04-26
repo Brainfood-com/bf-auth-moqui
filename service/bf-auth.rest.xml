@@ -43,4 +43,15 @@ along with this software (see the LICENSE.md file). If not, see
             </method>
         </id>
     </resource>
+
+    <resource name="emailLogin" require-authentication="anonymous-all">
+        <method type="post" require-authentication="anonymous-all">
+            <service name="bf-auth.AuthServices.send#EmailLogin" require-authentication="anonymous-all"/>
+        </method>
+        <id name="hash">
+            <method type="get" require-authentication="anonymous-all">
+                <service name="bf-auth.AuthServices.verify#EmailLogin" require-authentication="anonymous-all"/>
+            </method>
+        </id>
+    </resource>
 </resource>

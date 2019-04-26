@@ -154,6 +154,8 @@ if (partyId == null) {
     } else {
         throw new Exception('overlapping profiles')
     }
+} else {
+    foundPartyIds.add(partyId)
 }
 EntityValue person = null
 if (partyId == null) {
