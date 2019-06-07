@@ -22,6 +22,7 @@ import org.moqui.entity.EntityCondition
 import org.moqui.entity.EntityFind
 import org.moqui.entity.EntityList
 import org.moqui.entity.EntityValue
+import org.moqui.util.ObjectUtilities
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -175,9 +176,9 @@ private Map<String, Object> createOrAttachAccount(String partyId, List<Map<Strin
             contactMechPurposeId: 'BF_AUTH',
         ]).conditionDate('fromDate', 'thruDate', now).one()
         if (existingPartyView) {
-            String partyId = existingPartyView.partyId
-            parsedProfileData.partyId = partyId
-            foundPartyIds.add(partyId)
+            String existingPartyId = existingPartyView.partyId
+            parsedProfileData.partyId = existingPartyId
+            foundPartyIds.add(existingPartyId)
         }
 
         parsedProviderData[name] = parsedProfileData
@@ -229,6 +230,35 @@ private Map<String, Object> createOrAttachAccount(String partyId, List<Map<Strin
         }
     }
     logger.info('username:' + userAccount.username)
+    if (false) if (!userAccount.currentPassword) {
+        String randomPassword = RandomStringUtils.randomAlphanumeric(24) + '-'
+
+        userAccount.currentPassword = Base64.getEncoder().encodeToString(randomPassword.getBytes())
+        userAccount.passwordHashType = 'none'
+        userAccount.passwordBase64 = 'Y'
+        userAccount.update()
+        // FIXME: loop the service calls
+        if (false)
+        ec.service.sync().name('org.moqui.impl.UserServices.update#Password').parameters([
+            userId: userAccount.userId,
+            oldPassword: 'a',
+            newPassword: randomPassword,
+            newPasswordVerify: randomPassword,
+        ]).call()
+        /*
+
+        RandomStringUtils.random(24)
+        def passwordConfig = ec.executionContextFactory.confXmlRoot.first('user-facade').first('password')
+
+        passwordNode.attribute('min-length')
+
+        passwordNode.attribute('min-digits')
+        int digits = ObjectUtilities.countChars(newPassword, true, false, false)
+
+        passwordNode.attribute('min-others')
+        int others = ObjectUtilities.countChars(newPassword, false, false, true)
+        */
+    }
 
     for (Map<String, Object> parsedProfileData: parsedProviderData.values()) {
         String name = parsedProfileData.name
@@ -365,11 +395,18 @@ private Map<String, Object> createOrAttachAccount(String partyId, List<Map<Strin
             ]).setSequencedIdPrimary().createOrUpdate()
         }
     }
-
     userAccount.update()
 
     return [partyId: partyId]
 }
+
+/*
+String getHash(String text) {
+    MessageDigest md = MessageDigest.getInstance('SHA')
+    md.update(text.getBytes())
+    return Base64.getEncoder().encodeToString(md.digest())
+}
+*/
 
 private byte[] adjustSalt(byte[] possibleSalt, int length) {
     if (possibleSalt.length == length) {
@@ -531,8 +568,12 @@ Map<String, Object> getProviderProfile() {
 private String getMoquiAuthorizationHeader() {
     // Proof of Concept Hack: The username/password are random, and stored unhashed.
     ExecutionContext ec = context.ec
+logger.info('sessionAttributes.keySet=' + ec.web.sessionAttributes.keySet())
+logger.info('sessionAttributes.toString()=' + ec.web.sessionAttributes.toString())
+logger.info('sessionAttributes=' + ec.web.sessionAttributes)
     String partyId = context.partyId
     EntityValue userAccount = ec.entity.find('moqui.security.UserAccount').condition([partyId: partyId, isAuthAccount: 'Y']).one()
+
 
     AuthProxyTool authProxyTool = ec.factory.getTool("AuthProxy", AuthProxyTool.class)
     return authProxyTool.buildAuthorizationHeader(userAccount)
