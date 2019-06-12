@@ -31,13 +31,13 @@ along with this software (see the LICENSE.md file). If not, see
         </id>
     </resource>
 
-    <resource name="attachAccount">
+    <resource name="account">
         <method type="post">
-            <service name="bf.auth.AuthServices.find#AttachAccount"/>
+            <service name="bf.auth.AuthServices.create#Account"/>
         </method>
         <id name="partyId">
-            <method type="post">
-                <service name="bf.auth.AuthServices.find#AttachAccount"/>
+            <method type="put">
+                <service name="bf.auth.AuthServices.attach#Account"/>
             </method>
         </id>
     </resource>

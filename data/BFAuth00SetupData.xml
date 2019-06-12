@@ -6,7 +6,8 @@
  <moqui.security.ArtifactGroup artifactGroupId="BF-AUTH" description="?">
   <moqui.security.ArtifactGroupMember artifactName="/bf-auth" nameIsPattern="N" artifactTypeEnumId="AT_REST_PATH" inheritAuthz="Y"/>
   <moqui.security.ArtifactGroupMember artifactName="bf.auth.AuthServices.get#Me" nameIsPattern="N" artifactTypeEnumId="AT_SERVICE" inheritAuthz="Y"/>
-  <moqui.security.ArtifactGroupMember artifactName="bf.auth.AuthServices.find#AttachAccount" nameIsPattern="N" artifactTypeEnumId="AT_SERVICE" inheritAuthz="Y"/>
+  <moqui.security.ArtifactGroupMember artifactName="bf.auth.AuthServices.create#Account" nameIsPattern="N" artifactTypeEnumId="AT_SERVICE" inheritAuthz="Y"/>
+  <moqui.security.ArtifactGroupMember artifactName="bf.auth.AuthServices.attach#Account" nameIsPattern="N" artifactTypeEnumId="AT_SERVICE" inheritAuthz="Y"/>
   <moqui.security.ArtifactGroupMember artifactName="bf.auth.AuthServices.send#EmailLogin" nameIsPattern="N" artifactTypeEnumId="AT_SERVICE" inheritAuthz="Y"/>
   <moqui.security.ArtifactGroupMember artifactName="bf.auth.AuthServices.verify#EmailLogin" nameIsPattern="N" artifactTypeEnumId="AT_SERVICE" inheritAuthz="Y"/>
   <moqui.security.ArtifactAuthz artifactAuthzId="BF-AUTH-ADMIN" userGroupId="BF-AUTH" authzTypeEnumId="AUTHZT_ALWAYS" authzActionEnumId="AUTHZA_ALL"/>

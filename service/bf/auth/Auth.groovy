@@ -39,13 +39,25 @@ public Map<String, Object> connect() {
     return [:]
 }
 
-// partyId
-// profiles
+public Map<String, Object> createAccount() {
+    List<Map<String, Object>> profiles = context.profiles
+    return createOrAttachAccount(null, profiles)
+}
+
 public Map<String, Object> attachAccount() {
+    String partyId = context.partyId
+    List<Map<String, Object>> profiles = context.profiles
+    return createOrAttachAccount(partyId, profiles)
+}
+
+private Map<String, Object> createOrAttachAccount(String partyId, List<Map<String, Object>> profiles) {
+    logger.info('createOrAttachAccount:' + partyId)
+
+    logger.info('profiles:' + profiles)
+
     ExecutionContext ec = context.ec
     List<Map<String, Object>> profiles = context.profiles
     String partyId = context.partyId
-    logger.info('profiles:' + profiles)
 
     Map<String, Map<String, Object>> parsedProviderData = [:]
 
