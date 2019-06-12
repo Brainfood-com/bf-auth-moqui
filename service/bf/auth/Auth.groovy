@@ -16,6 +16,7 @@ import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import groovy.transform.Field
 
+import org.apache.commons.lang3.RandomStringUtils
 import org.moqui.context.ExecutionContext
 import org.moqui.entity.EntityCondition
 import org.moqui.entity.EntityFind
@@ -199,6 +200,27 @@ private Map<String, Object> createOrAttachAccount(String partyId, List<Map<Strin
         person = ec.entity.find('Person').condition('partyId', partyId).one()
     }
 
+    EntityValue userAccount = ec.entity.find('UserAccount').condition(['partyId': partyId, isAuthAccount: 'Y']).one()
+    if (userAccount == null) {
+        userAccount = ec.entity.makeValue('UserAccount').setAll([
+            partyId: partyId,
+            isAuthAccount: 'Y',
+        ]).setSequencedIdPrimary().createOrUpdate()
+    }
+    if (!userAccount.username) {
+        logger.info('no username')
+        while (true) {
+            String randomUsername = RandomStringUtils.randomAlphanumeric(24)
+            logger.info('trying random username:' + randomUsername)
+            if (ec.entity.find('UserAccount').condition([username: randomUsername]).one() == null) {
+                userAccount.username = randomUsername
+                userAccount.update()
+                break
+            }
+        }
+    }
+    logger.info('username:' + userAccount.username)
+
     for (Map<String, Object> parsedProfileData: parsedProviderData.values()) {
         String name = parsedProfileData.name
         String id = parsedProfileData.id
@@ -211,6 +233,9 @@ private Map<String, Object> createOrAttachAccount(String partyId, List<Map<Strin
         if (profile.displayName) {
             if (!person.nickname) {
                 person.nickname = profile.displayName
+            }
+            if (!userAccount.userFullName) {
+                userAccount.userFullName = profile.displayName
             }
         }
         if (profile.name) {
@@ -274,6 +299,9 @@ private Map<String, Object> createOrAttachAccount(String partyId, List<Map<Strin
                 switch (providerCM.contactMechTypeEnumId) {
                     case 'CmtEmailAddress':
                         emailToCMId[providerCM.infoString] = providerCM.contactMechId
+                        if (!userAccount.emailAddress) {
+                            userAccount.emailAddress = providerCM.infoString
+                        }
                         break
                 }
             }
@@ -329,6 +357,8 @@ private Map<String, Object> createOrAttachAccount(String partyId, List<Map<Strin
             ]).setSequencedIdPrimary().createOrUpdate()
         }
     }
+
+    userAccount.update()
 
     return [partyId: partyId]
 }

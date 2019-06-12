@@ -11,6 +11,9 @@
 
 
 
+    <extend-entity entity-name="UserAccount" package="moqui.security">
+        <field name="isAuthAccount" type="text-indicator"/>
+    </extend-entity>
     <entity entity-name="AuthContactMech" package="bf.auth">
         <field name="contactMechId" type="id" is-pk="true"/>
         <field name="providerId" type="text-medium"/>
