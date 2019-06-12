@@ -23,32 +23,32 @@ along with this software (see the LICENSE.md file). If not, see
         </method>
     </resource>
 
-    <resource name="me" require-authentication="anonymous-all">
-        <id name="partyId" require-authentication="anonymous-all">
-            <method type="get" require-authentication="anonymous-all">
-                <service name="bf.auth.AuthServices.get#Me" require-authentication="anonymous-all"/>
+    <resource name="me">
+        <id name="partyId">
+            <method type="get">
+                <service name="bf.auth.AuthServices.get#Me"/>
             </method>
         </id>
     </resource>
 
-    <resource name="attachAccount" require-authentication="anonymous-all">
-        <method type="post" require-authentication="anonymous-all">
-            <service name="bf.auth.AuthServices.find#AttachAccount" require-authentication="anonymous-all"/>
+    <resource name="attachAccount">
+        <method type="post">
+            <service name="bf.auth.AuthServices.find#AttachAccount"/>
         </method>
-        <id name="partyId" require-authentication="anonymous-all">
-            <method type="post" require-authentication="anonymous-all">
-                <service name="bf.auth.AuthServices.find#AttachAccount" require-authentication="anonymous-all"/>
+        <id name="partyId">
+            <method type="post">
+                <service name="bf.auth.AuthServices.find#AttachAccount"/>
             </method>
         </id>
     </resource>
 
-    <resource name="emailLogin" require-authentication="anonymous-all">
-        <method type="post" require-authentication="anonymous-all">
-            <service name="bf.auth.AuthServices.send#EmailLogin" require-authentication="anonymous-all"/>
+    <resource name="emailLogin">
+        <method type="post">
+            <service name="bf.auth.AuthServices.send#EmailLogin"/>
         </method>
         <id name="hash">
-            <method type="get" require-authentication="anonymous-all">
-                <service name="bf.auth.AuthServices.verify#EmailLogin" require-authentication="anonymous-all"/>
+            <method type="get">
+                <service name="bf.auth.AuthServices.verify#EmailLogin"/>
             </method>
         </id>
     </resource>
