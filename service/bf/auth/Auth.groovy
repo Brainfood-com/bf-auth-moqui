@@ -207,6 +207,11 @@ private Map<String, Object> createOrAttachAccount(String partyId, List<Map<Strin
         // First provider that has the info, gets to set it, but only once.
         // TODO: Record the provider that provided these fields, and allow
         // for updates.
+        if (profile.displayName) {
+            if (!person.nickname) {
+                person.nickname = profile.displayName
+            }
+        }
         if (profile.name) {
             if (!person.firstName && !person.lastName) {
                 person.firstName = profile.name.givenName
