@@ -42,20 +42,20 @@ public Map<String, Object> connect() {
 }
 
 public Map<String, Object> createAccount() {
-    List<Map<String, Object>> profiles = context.profiles
-    return createOrAttachAccount(null, profiles)
+    List<Map<String, Object>> providers = context.providers
+    return createOrAttachAccount(null, providers)
 }
 
 public Map<String, Object> attachAccount() {
     String partyId = context.partyId
-    List<Map<String, Object>> profiles = context.profiles
-    return createOrAttachAccount(partyId, profiles)
+    List<Map<String, Object>> providers = context.providers
+    return createOrAttachAccount(partyId, providers)
 }
 
-private Map<String, Object> createOrAttachAccount(String partyId, List<Map<String, Object>> profiles) {
+private Map<String, Object> createOrAttachAccount(String partyId, List<Map<String, Object>> providers) {
     logger.info('createOrAttachAccount:' + partyId)
 
-    logger.info('profiles:' + profiles)
+    logger.info('providers:' + providers)
 
     ExecutionContext ec = context.ec
     List<Map<String, Object>> profiles = context.profiles
@@ -69,9 +69,9 @@ private Map<String, Object> createOrAttachAccount(String partyId, List<Map<Strin
     List<EntityValue> newAuthContactMech = []
 
     // Update each provider profile
-    for (Map<String, Object> profileData: profiles) {
-        String name = profileData.name
-        Map<String, Object> profile = profileData.profile
+    for (Map<String, Object> providerData: providers) {
+        String name = providerData.name
+        Map<String, Object> profile = providerData.profile
         String id = profile.id
 
         Map<String, Object> parsedProfileData = [name: name, id: id, profile: profile]
@@ -107,7 +107,7 @@ private Map<String, Object> createOrAttachAccount(String partyId, List<Map<Strin
                 providerId: id,
             ])
         }
-        providerContactMech.providerJson = JsonOutput.toJson(profileData)
+        providerContactMech.profileJson = JsonOutput.toJson(profile)
         providerContactMech.createOrUpdate()
     //]).useCache(true).conditionDate('fromDate', 'thruDate', now).list()
         EntityFind acmsFind = ec.entity.find('bf.auth.AuthContactMechsInfo').condition([
@@ -289,8 +289,7 @@ private Map<String, Object> createOrAttachAccount(String partyId, List<Map<Strin
         Map<String, String> emailToCMId = [:]
         for (EntityValue partyProviderValue: partyProviderValues) {
             logger.info('provider:' + partyProviderValue)
-            Map<String, Object> providerData = new JsonSlurper().parseText(partyProviderValue.providerJson)
-            Map<String, Object> profile = providerData.profile
+            Map<String, Object> profile = new JsonSlurper().parseText(partyProviderValue.profileJson)
 
             EntityList providerCMs = ec.entity.find('bf.auth.AuthContactMechsInfo').condition([
                 authContactMechId: partyProviderValue.contactMechId,
@@ -467,10 +466,8 @@ public Map<String, Object> me() {
     // TODO: use the normalized data structures, not the json
 
     for (EntityValue providerContactMech: providerContactMechs) {
-        Map<String, Object> providerData = new JsonSlurper().parseText(providerContactMech.providerJson)
-        logger.info('providerData:' + providerData)
-        String providerName = providerData.name
-        Map<String, Object> profile = providerData.profile
+        Map<String, Object> profile = new JsonSlurper().parseText(providerContactMech.profileJson)
+        logger.info('profile:' + profile)
         for (Map<String, Object> profileEmail: profile.emails) {
             emailSet.add(profileEmail.value)
         }

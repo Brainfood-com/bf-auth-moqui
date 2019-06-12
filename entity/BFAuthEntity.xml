@@ -17,7 +17,7 @@
     <entity entity-name="AuthContactMech" package="bf.auth">
         <field name="contactMechId" type="id" is-pk="true"/>
         <field name="providerId" type="text-medium"/>
-        <field name="providerJson" type="text-very-long"/>
+        <field name="profileJson" type="text-very-long"/>
         <relationship type="one" related="mantle.party.contact.ContactMech"/>
         <relationship type="many" related="mantle.party.contact.ContactMech"/>
         <relationship type="many" related="bf.auth.AuthContactMechs" short-alias="authContactMechs">

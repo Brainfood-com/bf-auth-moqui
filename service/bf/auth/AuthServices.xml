@@ -28,8 +28,8 @@ along with this software (see the LICENSE.md file). If not, see
     </service>
     <service verb="create" noun="Account" type="script" location="component://bf-auth/service/bf/auth/Auth.groovy" method="createAccount">
         <in-parameters>
-            <parameter name="profiles" type="List" required="true">
-                <parameter name="profile" type="Map">
+            <parameter name="providers" type="List" required="true">
+                <parameter name="provider" type="Map">
                     <parameter name="name" type="String"/>
                     <parameter name="profile" type="Map">
                         <parameter name="id" type="String"/>
@@ -44,8 +44,8 @@ along with this software (see the LICENSE.md file). If not, see
     <service verb="attach" noun="Account" type="script" location="component://bf-auth/service/bf/auth/Auth.groovy" method="attachAccount">
         <in-parameters>
             <parameter name="partyId" type="String" required="true"/>
-            <parameter name="profiles" type="List" required="true">
-                <parameter name="profile" type="Map">
+            <parameter name="providers" type="List" required="true">
+                <parameter name="provider" type="Map">
                     <parameter name="name" type="String"/>
                     <parameter name="profile" type="Map">
                         <parameter name="id" type="String"/>
