@@ -32,6 +32,7 @@ import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
 
 @Field Logger logger = LoggerFactory.getLogger(getClass().getName())
+@Field Timestamp now = context.ec.user.nowTimestamp
 
 public Map<String, Object> connect() {
     logger.info('connect')
@@ -107,12 +108,12 @@ private Map<String, Object> createOrAttachAccount(String partyId, List<Map<Strin
         }
         providerContactMech.providerJson = JsonOutput.toJson(profileData)
         providerContactMech.createOrUpdate()
-    //]).useCache(true).conditionDate('fromDate', 'thruDate', ec.user.nowTimestamp).list()
+    //]).useCache(true).conditionDate('fromDate', 'thruDate', now).list()
         EntityFind acmsFind = ec.entity.find('bf.auth.AuthContactMechsInfo').condition([
             authContactMechID: providerContactMech.contactMechId,
             //contactMechTypeEnumId: 'CmtEmailAddress',
             contactMechPurposeId: 'BF_AUTH',
-        ]).conditionDate('fromDate', 'thruDate', ec.user.nowTimestamp)
+        ]).conditionDate('fromDate', 'thruDate', now)
 
         Set<String> newEmailSet = []
         for (Map<String, Object> profileEmail: profile.emails) {
@@ -131,7 +132,7 @@ private Map<String, Object> createOrAttachAccount(String partyId, List<Map<Strin
                             contactMechId: acmsValue.contactMechId,
                             contactMechPurposeId: 'BF_AUTH',
                             fromDate: acmsValue.fromDate,
-                        ]).updateAll([thruDate: ec.user.nowTimestamp])
+                        ]).updateAll([thruDate: now])
                     }
                     break
             }
@@ -152,7 +153,7 @@ private Map<String, Object> createOrAttachAccount(String partyId, List<Map<Strin
                 authContactMechId: providerContactMech.contactMechId,
                 contactMechId: emailCM.contactMechId,
                 contactMechPurposeId: 'BF_AUTH',
-                fromDate: ec.user.nowTimestamp,
+                fromDate: now,
             ]).createOrUpdate()
         }
 
@@ -162,7 +163,7 @@ private Map<String, Object> createOrAttachAccount(String partyId, List<Map<Strin
         EntityValue existingPartyView = ec.entity.find('mantle.party.contact.PartyContactMech').condition([
             contactMechId: providerContactMech.contactMechId,
             contactMechPurposeId: 'BF_AUTH',
-        ]).conditionDate('fromDate', 'thruDate', ec.user.nowTimestamp).one()
+        ]).conditionDate('fromDate', 'thruDate', now).one()
         if (existingPartyView) {
             String partyId = existingPartyView.partyId
             parsedProfileData.partyId = partyId
@@ -231,12 +232,12 @@ private Map<String, Object> createOrAttachAccount(String partyId, List<Map<Strin
         if (foundPartyId != null) {
             if (foundPartyId != partyId) {
                 // move the profile from the other user to this user
-                ec.entity.find('mantle.party.contact.PartyContactMech').condition([partyId: foundPartyId, contactMechId: providerContactMechId]).updateAll([thruDate: ec.user.nowTimestamp])
+                ec.entity.find('mantle.party.contact.PartyContactMech').condition([partyId: foundPartyId, contactMechId: providerContactMechId]).updateAll([thruDate: now])
                 ec.entity.makeValue('mantle.party.contact.PartyContactMech').setAll([
                     partyId: partyId,
                     contactMechId: providerContactMechId,
                     contactMechPurposeId: 'BF_AUTH',
-                    fromDate: ec.user.nowTimestamp,
+                    fromDate: now,
                 ]).createOrUpdate()
             }
         } else {
@@ -245,7 +246,7 @@ private Map<String, Object> createOrAttachAccount(String partyId, List<Map<Strin
                 partyId: partyId,
                 contactMechId: providerContactMechId,
                 contactMechPurposeId: 'BF_AUTH',
-                fromDate: ec.user.nowTimestamp,
+                fromDate: now,
             ]).createOrUpdate()
         }
     }
@@ -255,7 +256,7 @@ private Map<String, Object> createOrAttachAccount(String partyId, List<Map<Strin
     for (String foundPartyId: foundPartyIds) {
         logger.info('process party:' + foundPartyId)
         // Find all the providers for this party
-        EntityList partyProviderValues = ec.entity.find('bf.auth.PartyAuthContactMech').condition('partyId', foundPartyId).conditionDate('fromDate', 'thruDate', ec.user.nowTimestamp).list()
+        EntityList partyProviderValues = ec.entity.find('bf.auth.PartyAuthContactMech').condition('partyId', foundPartyId).conditionDate('fromDate', 'thruDate', now).list()
 
         Set<String> allPhotos = []
 
@@ -268,7 +269,7 @@ private Map<String, Object> createOrAttachAccount(String partyId, List<Map<Strin
 
             EntityList providerCMs = ec.entity.find('bf.auth.AuthContactMechsInfo').condition([
                 authContactMechId: partyProviderValue.contactMechId,
-            ]).conditionDate('fromDate', 'thruDate', ec.user.nowTimestamp).list()
+            ]).conditionDate('fromDate', 'thruDate', now).list()
             for (EntityValue providerCM: providerCMs) {
                 switch (providerCM.contactMechTypeEnumId) {
                     case 'CmtEmailAddress':
@@ -286,7 +287,7 @@ private Map<String, Object> createOrAttachAccount(String partyId, List<Map<Strin
         EntityList partyCMs = ec.entity.find('mantle.party.contact.PartyContactMechInfo').condition([
             partyId: foundPartyId,
             contactMechPurposeId: 'BF_AUTH',
-        ]).conditionDate('fromDate', 'thruDate', ec.user.nowTimestamp).list()
+        ]).conditionDate('fromDate', 'thruDate', now).list()
         for (EntityValue partyCM: partyCMs) {
             switch (partyCM.contactMechTypeEnumId) {
                 case 'CmtEmailAddress':
@@ -296,7 +297,7 @@ private Map<String, Object> createOrAttachAccount(String partyId, List<Map<Strin
                             partyId: partyCM.partyId,
                             contactMechPurposeId: 'BF_AUTH',
                             fromDate: partyCM.fromDate,
-                        ]).updateAll([thruDate: ec.user.nowTimestamp])
+                        ]).updateAll([thruDate: now])
                     }
                     break
             }
@@ -306,7 +307,7 @@ private Map<String, Object> createOrAttachAccount(String partyId, List<Map<Strin
                 partyId: foundPartyId,
                 contactMechId: emailEntry.value,
                 contactMechPurposeId: 'BF_AUTH',
-                fromDate: ec.user.nowTimestamp,
+                fromDate: now,
             ]).createOrUpdate()
         }
 
@@ -422,7 +423,7 @@ public Map<String, Object> me() {
 
     EntityList providerContactMechs = ec.entity.find('bf.auth.PartyAuthContactMech').condition([
         partyId: partyId,
-    ]).useCache(true).conditionDate('fromDate', 'thruDate', ec.user.nowTimestamp).list()
+    ]).useCache(true).conditionDate('fromDate', 'thruDate', now).list()
 
     Set<String> emailSet = []
     String profilePic = null
