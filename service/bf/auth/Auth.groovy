@@ -72,6 +72,7 @@ private Map<String, Object> createOrAttachAccount(String partyId, List<Map<Strin
     for (Map<String, Object> providerData: providers) {
         String name = providerData.name
         Map<String, Object> profile = providerData.profile
+        Object token = providerData.token
         String id = profile.id
 
         Map<String, Object> parsedProfileData = [name: name, id: id, profile: profile]
@@ -108,6 +109,7 @@ private Map<String, Object> createOrAttachAccount(String partyId, List<Map<Strin
             ])
         }
         providerContactMech.profileJson = JsonOutput.toJson(profile)
+        providerContactMech.tokenJson = JsonOutput.toJson(token)
         providerContactMech.createOrUpdate()
     //]).useCache(true).conditionDate('fromDate', 'thruDate', now).list()
         EntityFind acmsFind = ec.entity.find('bf.auth.AuthContactMechsInfo').condition([
@@ -485,4 +487,62 @@ public Map<String, Object> me() {
         displayName: displayName,
         emails: (emailSet as List).sort(),
     ]
+}
+
+private Map<String, Object> getProviderJson(fieldName) {
+    logger.info('getProviderJson:' + fieldName)
+
+    ExecutionContext ec = context.ec
+    String partyId = context.partyId
+    String providerName = context.providerName
+
+    EntityValue providerEnumeration = ec.entity.find('moqui.basic.Enumeration').condition([enumTypeId: 'PJSContactMech', enumCode: providerName]).one()
+    if (!providerEnumeration) {
+        return null
+    }
+
+    EntityValue providerContactMech = ec.entity.find('bf.auth.PartyAuthContactMech').condition([
+        contactMechTypeEnumId: providerEnumeration.enumId,
+        partyId: partyId,
+    ]).useCache(true).conditionDate('fromDate', 'thruDate', now).one()
+
+    logger.info('providerContactMech=' + providerContactMech)
+    if (!providerContactMech) {
+        return null
+    }
+
+    Object value = new JsonSlurper().parseText(providerContactMech[fieldName])
+    logger.info('value=' + value)
+    return value
+}
+
+Map<String, Object> getProviderProfile() {
+    Object providerProfile = getProviderJson('profileJson')
+    return [providerProfile: providerProfile]
+}
+
+Map<String, Object> getProviderToken() {
+    String providerName = context.providerName
+    Object providerToken = getProviderJson('tokenJson')
+    return [providerToken: providerToken]
+}
+
+Map<String, Object> getProviderTokens() {
+    logger.info('getProviderTokens')
+
+    ExecutionContext ec = context.ec
+    String partyId = context.partyId
+
+    EntityList providerContactMechs = ec.entity.find('bf.auth.PartyAuthContactMech').condition([
+        partyId: partyId,
+    ]).useCache(true).conditionDate('fromDate', 'thruDate', now).list()
+
+    Map<String, Object> providerTokens = [:]
+    for (EntityValue providerContactMech: providerContactMechs) {
+        EntityValue providerEnumeration = ec.entity.find('moqui.basic.Enumeration').condition([enumId: providerContactMech.contactMechTypeEnumId]).one()
+        String providerName = providerEnumeration.enumCode
+        providerTokens[providerName] = new JsonSlurper().parseText(providerContactMech.tokenJson)
+    }
+    providerTokens.moqui = getMoquiAuthorizationHeader()
+    return [providerTokens: providerTokens]
 }

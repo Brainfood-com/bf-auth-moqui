@@ -31,6 +31,19 @@ along with this software (see the LICENSE.md file). If not, see
         </id>
     </resource>
 
+    <resource name="tokens">
+        <id name="partyId">
+            <method type="get">
+                <service name="bf.auth.AuthServices.get#ProviderTokens"/>
+            </method>
+            <id name="providerName">
+                <method type="get">
+                    <service name="bf.auth.AuthServices.get#ProviderToken"/>
+                </method>
+            </id>
+         </id>
+    </resource>
+
     <resource name="account">
         <method type="post">
             <service name="bf.auth.AuthServices.create#Account"/>
@@ -39,6 +52,11 @@ along with this software (see the LICENSE.md file). If not, see
             <method type="put">
                 <service name="bf.auth.AuthServices.attach#Account"/>
             </method>
+            <id name="providerName">
+                <method type="get">
+                    <service name="bf.auth.AuthServices.get#AccountProfile"/>
+                </method>
+            </id>
         </id>
     </resource>
 
