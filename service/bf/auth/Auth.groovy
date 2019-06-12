@@ -32,11 +32,18 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
 
+import bf.auth.AuthProxyTool
+
 @Field Logger logger = LoggerFactory.getLogger(getClass().getName())
 @Field Timestamp now = context.ec.user.nowTimestamp
 
 public Map<String, Object> connect() {
     logger.info('connect')
+    ExecutionContext ec = context.ec
+    String authorization = context.authorization
+
+    AuthProxyTool authProxyTool = ec.getFactory().getTool("AuthProxy", AuthProxyTool.class)
+    authProxyTool.shiroSetUser(authProxyTool.decodeAuthorization(authorization), ec.web.session)
 
     return [:]
 }
@@ -521,9 +528,19 @@ Map<String, Object> getProviderProfile() {
     return [providerProfile: providerProfile]
 }
 
+private String getMoquiAuthorizationHeader() {
+    // Proof of Concept Hack: The username/password are random, and stored unhashed.
+    ExecutionContext ec = context.ec
+    String partyId = context.partyId
+    EntityValue userAccount = ec.entity.find('moqui.security.UserAccount').condition([partyId: partyId, isAuthAccount: 'Y']).one()
+
+    AuthProxyTool authProxyTool = ec.factory.getTool("AuthProxy", AuthProxyTool.class)
+    return authProxyTool.buildAuthorizationHeader(userAccount)
+}
+
 Map<String, Object> getProviderToken() {
     String providerName = context.providerName
-    Object providerToken = getProviderJson('tokenJson')
+    Object providerToken = providerName == 'moqui' ? getMoquiAuthorizationHeader() : getProviderJson('tokenJson')
     return [providerToken: providerToken]
 }
 
