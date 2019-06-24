@@ -67,7 +67,6 @@ private Map<String, Object> createOrAttachAccount(String partyId, List<Map<Strin
 
     ExecutionContext ec = context.ec
     List<Map<String, Object>> profiles = context.profiles
-    String partyId = context.partyId
 
     Map<String, Map<String, Object>> parsedProviderData = [:]
 
