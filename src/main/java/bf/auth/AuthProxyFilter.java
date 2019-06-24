@@ -41,7 +41,11 @@ public class AuthProxyFilter implements Filter {
         } catch (GeneralSecurityException e) {
             throw (ServletException) new ServletException(e.getMessage()).initCause(e);
         }
-        AuthProxyTool.shiroRunAs(username, request.getSession(), () -> chain.doFilter(request, response));
+        if (username != null) {
+            AuthProxyTool.shiroRunAs(username, request.getSession(), () -> chain.doFilter(request, response));
+        } else {
+            chain.doFilter(request, response);
+        }
     }
 
     @Override
