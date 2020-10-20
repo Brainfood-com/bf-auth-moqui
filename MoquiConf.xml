@@ -6,8 +6,20 @@
     </tools>
     <webapp-list>
         <webapp name="webroot">
+         <!--
             <filter name="BfAuthProxyFilter" class="bf.auth.AuthProxyFilter">
                 <init-param name="private-key" value="${BF_AUTH_PROXY_PRIVATE_KEY}"/>
+                <url-pattern>/*</url-pattern>
+                <dispatcher>REQUEST</dispatcher>
+            </filter>
+            <filter name="KeycloakSecurityFilter" class="org.keycloak.adapters.servlet.KeycloakOIDCFilter">
+                <init-param name="keycloak.config.resolver" value="bf.auth.BfAuthKeycloakConfigResolver"/>
+                <url-pattern>/*</url-pattern>
+                <dispatcher>REQUEST</dispatcher>
+            </filter>
+         -->
+            <filter name="BfAuthKeycloakSecurityFilter" class="bf.auth.BfAuthKeycloakSecurityFilter">
+                <init-param name="keycloak.config.resolver" value="bf.auth.BfAuthKeycloakConfigResolver"/>
                 <url-pattern>/*</url-pattern>
                 <dispatcher>REQUEST</dispatcher>
             </filter>
