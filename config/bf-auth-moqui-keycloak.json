@@ -1,4 +1,8 @@
 {
+  "principal-attribute": "sub",
+  "enable-cors": true,
+  "autodetect-bearer-only": true,
+
   "realm": "${env.BF_AUTH_MOQUI_KEYCLOAK_REALM}",
   "disable-trust-manager": true,
   "auth-server-url": "${env.BF_AUTH_MOQUI_KEYCLOAK_URL}",

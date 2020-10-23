@@ -1,8 +1,9 @@
-<entity-facade-xml type="demo">
+<entity-facade-xml type="seed-initial">
  <parties partyId="bf-auth-demo-api" partyTypeEnumId="PtyOrganization">
   <organization organizationName="BF Auth Demo API"/>
-  <userAccounts username="bf-auth-demo-api" currentPassword="16ac58bbfa332c1c55bd98b53e60720bfa90d394" passwordHashType="SHA">
+  <userAccounts userId="BF-AUTH-DEMO-API" username="bf-auth-demo-api" currentPassword="16ac58bbfa332c1c55bd98b53e60720bfa90d394" passwordHashType="SHA">
    <groups userGroupId="BF-AUTH"/>
+   <groups userGroupId="ADMIN"/>
   </userAccounts>
  </parties>
 </entity-facade-xml>

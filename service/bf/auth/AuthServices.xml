@@ -29,7 +29,7 @@ along with this software (see the LICENSE.md file). If not, see
             <parameter name="displayName" type="String"/>
         </out-parameters>
     </service>
-    <service verb="create" noun="Account" type="script" location="component://bf-auth/service/bf/auth/Auth.groovy" method="createAccount">
+    <service verb="create" noun="Account" type="script" location="component://bf-auth/service/bf/auth/Auth.groovy" method="createAccount" authenticate="false">
         <in-parameters>
             <parameter name="providers" type="List" required="true">
                 <parameter name="provider" type="Map">

@@ -10,6 +10,7 @@
   <moqui.security.ArtifactGroupMember artifactName="bf.auth.AuthServices.attach#Account" nameIsPattern="N" artifactTypeEnumId="AT_SERVICE" inheritAuthz="Y"/>
   <moqui.security.ArtifactGroupMember artifactName="bf.auth.AuthServices.send#EmailLogin" nameIsPattern="N" artifactTypeEnumId="AT_SERVICE" inheritAuthz="Y"/>
   <moqui.security.ArtifactGroupMember artifactName="bf.auth.AuthServices.verify#EmailLogin" nameIsPattern="N" artifactTypeEnumId="AT_SERVICE" inheritAuthz="Y"/>
+  <moqui.security.ArtifactGroupMember artifactName="bf.auth.KeycloakServices.import#KeycloakUser" nameIsPattern="N" artifactTypeEnumId="AT_SERVICE" inheritAuthz="Y"/>
   <moqui.security.ArtifactAuthz artifactAuthzId="BF-AUTH-ADMIN" userGroupId="BF-AUTH" authzTypeEnumId="AUTHZT_ALWAYS" authzActionEnumId="AUTHZA_ALL"/>
  </moqui.security.ArtifactGroup>
  <!--

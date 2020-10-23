@@ -86,7 +86,7 @@ private Map<String, Object> createOrAttachAccount(String partyId, List<Map<Strin
 
         logger.info('profile(' + name + '):' + id)
 
-        EntityValue providerEnumeration = ec.entity.find('moqui.basic.Enumeration').condition([enumTypeId: 'PJSContactMech']).one()
+        EntityValue providerEnumeration = ec.entity.find('moqui.basic.Enumeration').disableAuthz().condition([enumTypeId: 'PJSContactMech']).one()
         if (!providerEnumeration) {
             providerEnumeration = ec.entity.makeValue('moqui.basic.Enumeration').setAll([
                 enumTypeId: 'PJSContactMech',

@@ -35,22 +35,24 @@ import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.adapters.OIDCHttpFacade;
 */
 
-public class BfAuthKeycloakSecurityFilter implements Filter {
+public class AuthKeycloakUtil implements Filter {
     protected final static Logger logger = LoggerFactory.getLogger(BfAuthKeycloakSecurityFilter.class);
 
-    @Override
+	@Override
     public void init(FilterConfig config) throws ServletException {
     }
 
-    private static void appendKeycloakSecurityContext(StringBuilder sb, KeycloakSecurityContext ksc) {
+    public static void showKeycloakSecurityContext(KeycloakSecurityContext kcContext) {
+        if (kcContext == null) {
+            return;
+        }
+        IDToken idToken = kcContext.getIdToken();
+        AuthorizationContext authContext = kcContext.getAuthorizationContext();
+        StringBuilder sb = new StringBuilder();
+        // not release yet: sb.append("authTime=").append(idToken.getAuth_time()).append(";");
         sb.append("KeycloakSecurityContext(");
-        sb.append("realm=").append(ksc.getRealm()).append(";");
-        sb.append(")");
-    }
-
-    private static void appendIDToken(StringBuilder sb, KeycloakSecurityContext ksc) {
-        IDToken idToken = ksc.getIdToken();
-        sb.append("IDToken(");
+        sb.append("realm=").append(kcContext.getRealm()).append(";");
+        sb.append("), IDToken(");
         sb.append("id=").append(idToken.getId()).append(";");
         sb.append("subject=").append(idToken.getSubject()).append(";");
         sb.append("authTime=").append(idToken.getAuthTime()).append(";");
@@ -78,94 +80,25 @@ public class BfAuthKeycloakSecurityFilter implements Filter {
         sb.append("acr=").append(idToken.getAcr()).append(";");
         //
         sb.append("category=").append(idToken.getCategory()).append(";");
-        sb.append(")");
-    }
-
-    private static void appendAccessToken(StringBuilder sb, KeycloakSecurityContext ksc) {
-        AccessToken accessToken = ksc.getToken();
-        sb.append("AccessToken(");
+        sb.append("), AccessToken(");
+        AccessToken accessToken = kcContext.getToken();
         sb.append("roles=").append(accessToken.getRealmAccess().getRoles()).append(";");
         sb.append("resourceAccess=").append(accessToken.getResourceAccess()).append(";");
         sb.append("isVerifyCaller=").append(accessToken.isVerifyCaller()).append(";");
         sb.append("allowedOrigins=").append(accessToken.getAllowedOrigins()).append(";");
         sb.append("authorization=").append(accessToken.getAuthorization()).append(";");
         sb.append("scope=").append(accessToken.getScope()).append(";");
-		Map<String, AccessToken.Access> resourceAccess = accessToken.getResourceAccess()
-		for (Map.Entry<String, AccessToken.Access> entry: resourceAccess.entrySet()) {
-			sb.append("Resource(").append(entry.getKey()).append(")");
-			appendAccessTokenAccess(sb, entry.getValue());
-			sb.append(";");
-		}
-        sb.append("otherClaims=").append(accessToken.getOtherClaims()).append(";");
-        appendAccessTokenAccess(sb.append("Realm"), accessToken.getRealmAccess());
-        sb.append(";");
-        appendAccessTokenAuthorization(sb, accessToken.getAuthorization());
-        sb.append(";");
-        appendAccessTokenCertConf(sb, accessToken.getCertConf());
         sb.append(")");
-    }
-
-    private static void appendAccessTokenAccess(StringBuilder sb, AccessToken.Access access) {
-        sb.append("Access(");
-        if (access != null) {
-            sb.append("roles=").append(access.getRoles()).append(";");
-            sb.append("verifyCaller=").append(access.getVerifyCaller()).append(";");
-        }
-        sb.append(")");
-    }
-
-    private static void appendAccessTokenAuthorization(StringBuilder sb, AccessToken.Authorization authorization) {
-        sb.append("Authorization(");
-        if (authorization != null) {
-            sb.append("permissions=").append(authorization.getPermissions()).append(";");
-        }
-        sb.append(")");
-    }
-
-    private static void appendAccessTokenCertConf(StringBuilder sb, AccessToken.CertConf certConf) {
-        sb.append("CertConf(");
-        if (certConf != null) {
-            sb.append("certThumbprint=").append(certConf.getCertThumbprint()).append(";");
-        }
-        sb.append(")");
-    }
-
-    public static void showKeycloakSecurityContext(KeycloakSecurityContext ksc) {
-        if (ksc == null) {
-            return;
-        }
-        IDToken idToken = ksc.getIdToken();
-        AuthorizationContext authContext = ksc.getAuthorizationContext();
-        StringBuilder sb = new StringBuilder();
-        // not release yet: sb.append("authTime=").append(idToken.getAuth_time()).append(";");
-        appendKeycloakSecurityContext(sb, ksc);
-        sb.append(", ");
-        appendIDToken(sb, ksc);
-        sb.append(", ");
-        appendAccessToken(sb, ksc);
-
         logger.info(" sb=" + sb);
     }
 
-    @Override
+	@Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
         // Can also look at the session if needed
-        KeycloakSecurityContext ksc = (KeycloakSecurityContext) request.getAttribute(KeycloakSecurityContext.class.getName());
-        logger.info("doFilter(" + ksc + ")");
-        showKeycloakSecurityContext(ksc);
-        //importKeycloakSecurityContext(ksc);
-        if (ksc != null) {
-            ExecutionContext ec = Moqui.getExecutionContext();
-            //ec.user.pushUser('bf-auth-demo-api');
-            try {
-                //ec.user.loginUser('alyvr', 'moqui');
-                ec.user.loginUser('bf-auth-demo-api', 'moqui');
-                Map<String, Object> result = ec.service.sync().name("bf.auth.KeycloakServices.import#KeycloakUser").parameters([ksc: ksc]).call();
-                logger.info('result=' + result)
-            } finally {
-                //ec.user.popUser();
-            }
-        }
+        KeycloakSecurityContext kcContext = (KeycloakSecurityContext) request.getAttribute(KeycloakSecurityContext.class.getName());
+        logger.info("doFilter(" + kcContext + ")");
+        showKeycloakSecurityContext(kcContext);
+        importKeycloakSecurityContext(kcContext);
         chain.doFilter(request, response);
     }
         /*
@@ -182,15 +115,15 @@ public class BfAuthKeycloakSecurityFilter implements Filter {
          *
          */
 
-    public static void importKeycloakSecurityContext(KeycloakSecurityContext ksc) {
-        ExecutionContext ec = Moqui.getExecutionContext();
-        if (ksc == null) {
+    public static Map<String, Object> attachKeycloakSecurityContext(ExecutionContext ec, KeycloakSecurityContext kcContext, String partyId) {
+        if (kcContext == null) {
             return;
         }
-        IDToken idToken = ksc.getIdToken();
+        IDToken idToken = kcContext.getIdToken();
         Map<String, Object> svcContext = [
             //authUsername: 'alyvr',
             //authPassword: 'moqui',
+            partyId: partyId,
             providers: [
                 [
                     name: 'keycloak',
@@ -224,25 +157,27 @@ public class BfAuthKeycloakSecurityFilter implements Filter {
             ],
         ];
         logger.info('about to call createOrAttachAccount: ' + svcContext);
+		ec.user.pushUser('bf-auth-demo-api');
         try {
 /*
-            UsernamePasswordToken token = new UsernamePasswordToken('alyvr', 'moqui');
-            UsernamePasswordToken token = new UsernamePasswordToken('bf-auth-demo-api', 'moqui');
-            Subject loginSubject = ec.getEcfi().getSecurityManager().createSubject(new DefaultSubjectContext());
-            loginSubject.login(token);
+			UsernamePasswordToken token = new UsernamePasswordToken('alyvr', 'moqui');
+			UsernamePasswordToken token = new UsernamePasswordToken('bf-auth-demo-api', 'moqui');
+			Subject loginSubject = ec.getEcfi().getSecurityManager().createSubject(new DefaultSubjectContext());
+			loginSubject.login(token);
 */
-            //def user = ec.find('UserAccount').condition('userId', '_NA_');
+			//def user = ec.find('UserAccount').condition('userId', '_NA_');
             //ec.user.loginUser('bf-auth-demo-api', 'moqui');
-
-            ec.user.loginUser('alyvr', 'moqui');
-            //ec.user.internalLoginUser('_NA_', false);
-            ec.service.sync().name("bf.auth.AuthServices.create#Account").parameters(svcContext).call();
+			//ec.user.internalLoginUser('_NA_', false);
+            return ec.service.sync().name("bf.auth.AuthServices.create#Account").parameters(svcContext).call();
         } catch (Exception e) {
             e.printStackTrace();
+            return null;
+        } finally {
+            ec.user.popUser();
         }
     }
 
-    @Override
+	@Override
     public void destroy() {
     }
 }
