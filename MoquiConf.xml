@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!-- No copyright or license for configuration file, details here are not considered a creative work. -->
+<moqui-conf xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/moqui-conf-2.1.xsd">
+    <tools>
+        <tool-factory class="bf.auth.AuthProxyToolFactory" init-priority="99" disabled="false"/>
+    </tools>
+    <webapp-list>
+        <webapp name="webroot">
+            <filter name="KeycloakSecurityFilter" class="org.keycloak.adapters.servlet.KeycloakOIDCFilter">
+                <init-param name="keycloak.config.resolver" value="bf.auth.BfAuthKeycloakConfigResolver"/>
+                <url-pattern>/*</url-pattern>
+                <dispatcher>REQUEST</dispatcher>
+            </filter>
+            <filter name="BfAuthKeycloakSecurityFilter" class="bf.auth.BfAuthKeycloakSecurityFilter">
+                <init-param name="keycloak.config.resolver" value="bf.auth.BfAuthKeycloakConfigResolver"/>
+                <url-pattern>/*</url-pattern>
+                <dispatcher>REQUEST</dispatcher>
+            </filter>
+        </webapp>
+    </webapp-list>
+</moqui-conf>
