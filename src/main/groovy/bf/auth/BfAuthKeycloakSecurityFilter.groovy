@@ -54,6 +54,9 @@ public class BfAuthKeycloakSecurityFilter implements Filter {
 
     private static void appendIDToken(StringBuilder sb, KeycloakSecurityContext ksc) {
         IDToken idToken = ksc.getIdToken();
+        if (idToken == null) {
+            return
+        }
         sb.append("IDToken(");
         sb.append("id=").append(idToken.getId()).append(";");
         sb.append("subject=").append(idToken.getSubject()).append(";");

@@ -16,6 +16,8 @@
                 <url-pattern>/*</url-pattern>
                 <dispatcher>REQUEST</dispatcher>
             </filter>
+            <response-header type="cors-actual" name="Access-Control-Allow-Credentials" value="true" single="true"/>
+            <response-header type="cors-preflight" name="Access-Control-Allow-Credentials" value="true" single="true"/>
         </webapp>
     </webapp-list>
 </moqui-conf>
