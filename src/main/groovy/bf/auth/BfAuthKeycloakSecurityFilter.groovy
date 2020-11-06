@@ -179,6 +179,7 @@ public class BfAuthKeycloakSecurityFilter implements Filter {
                 Map<String, Object> result = ec.service.sync().name("bf.auth.KeycloakServices.import#KeycloakUser").parameters([ksc: ksc]).call();
                 logger.info('result=' + result)
                 username = result?.userAccount?.username
+                request.setAttribute('moqui.request.authenticated', 'true')
             } finally {
                 //ec.user.popUser();
             }
