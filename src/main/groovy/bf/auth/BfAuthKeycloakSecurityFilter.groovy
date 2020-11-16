@@ -53,10 +53,10 @@ public class BfAuthKeycloakSecurityFilter implements Filter {
     }
 
     private static void appendIDToken(StringBuilder sb, KeycloakSecurityContext ksc) {
-        IDToken idToken = ksc.getIdToken();
-        if (idToken == null) {
-            return
-        }
+        renderIDToken(sb, ksc.getIdToken());
+    }
+
+    private static void renderIDToken(StringBuilder sb, IDToken idToken) {
         sb.append("IDToken(");
         if (idToken != null) {
             sb.append("id=").append(idToken.getId()).append(";");
@@ -93,6 +93,7 @@ public class BfAuthKeycloakSecurityFilter implements Filter {
     private static void appendAccessToken(StringBuilder sb, KeycloakSecurityContext ksc) {
         AccessToken accessToken = ksc.getToken();
         sb.append("AccessToken(");
+        renderIDToken(sb, accessToken);
         if (accessToken != null) {
             sb.append("roles=").append(accessToken.getRealmAccess().getRoles()).append(";");
             sb.append("resourceAccess=").append(accessToken.getResourceAccess()).append(";");
