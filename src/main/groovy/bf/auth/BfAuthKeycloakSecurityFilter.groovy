@@ -184,6 +184,7 @@ public class BfAuthKeycloakSecurityFilter implements Filter {
                 //ec.user.popUser();
             }
         }
+        request.setAttribute('moqui.request.authenticated', 'true')
         shiroRunAs(username, request.getSession(), { chain.doFilter(request, response) });
     }
 
