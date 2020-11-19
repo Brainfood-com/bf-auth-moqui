@@ -53,62 +53,67 @@ public class BfAuthKeycloakSecurityFilter implements Filter {
     }
 
     private static void appendIDToken(StringBuilder sb, KeycloakSecurityContext ksc) {
-        IDToken idToken = ksc.getIdToken();
-        if (idToken == null) {
-            return
-        }
+        renderIDToken(sb, ksc.getIdToken());
+    }
+
+    private static void renderIDToken(StringBuilder sb, IDToken idToken) {
         sb.append("IDToken(");
-        sb.append("id=").append(idToken.getId()).append(";");
-        sb.append("subject=").append(idToken.getSubject()).append(";");
-        sb.append("authTime=").append(idToken.getAuthTime()).append(";");
-        sb.append("name=").append(idToken.getName()).append(";");
-        sb.append("givenName=").append(idToken.getGivenName()).append(";");
-        sb.append("familyName=").append(idToken.getFamilyName()).append(";");
-        sb.append("middleName=").append(idToken.getMiddleName()).append(";");
-        sb.append("nickName=").append(idToken.getNickName()).append(";");
-        sb.append("preferredUsername=").append(idToken.getPreferredUsername()).append(";");
-        sb.append("profile=").append(idToken.getProfile()).append(";");
-        sb.append("picture=").append(idToken.getPicture()).append(";");
-        sb.append("website=").append(idToken.getWebsite()).append(";");
-        sb.append("email=").append(idToken.getEmail()).append(";");
-        sb.append("emailVerified=").append(idToken.getEmailVerified()).append(";");
-        sb.append("gender=").append(idToken.getGender()).append(";");
-        sb.append("birthdate=").append(idToken.getBirthdate()).append(";");
-        sb.append("zoneinfo=").append(idToken.getZoneinfo()).append(";");
-        sb.append("locale=").append(idToken.getLocale()).append(";");
-        sb.append("phoneNumber=").append(idToken.getPhoneNumber()).append(";");
-        sb.append("phoneNumberVerified=").append(idToken.getPhoneNumberVerified()).append(";");
-        //
-        sb.append("address=").append(idToken.getAddress()).append(";");
-        sb.append("updatedAt=").append(idToken.getUpdatedAt()).append(";");
-        sb.append("claimsLocales=").append(idToken.getClaimsLocales()).append(";");
-        sb.append("acr=").append(idToken.getAcr()).append(";");
-        //
-        sb.append("category=").append(idToken.getCategory()).append(";");
+        if (idToken != null) {
+            sb.append("id=").append(idToken.getId()).append(";");
+            sb.append("subject=").append(idToken.getSubject()).append(";");
+            sb.append("authTime=").append(idToken.getAuthTime()).append(";");
+            sb.append("name=").append(idToken.getName()).append(";");
+            sb.append("givenName=").append(idToken.getGivenName()).append(";");
+            sb.append("familyName=").append(idToken.getFamilyName()).append(";");
+            sb.append("middleName=").append(idToken.getMiddleName()).append(";");
+            sb.append("nickName=").append(idToken.getNickName()).append(";");
+            sb.append("preferredUsername=").append(idToken.getPreferredUsername()).append(";");
+            sb.append("profile=").append(idToken.getProfile()).append(";");
+            sb.append("picture=").append(idToken.getPicture()).append(";");
+            sb.append("website=").append(idToken.getWebsite()).append(";");
+            sb.append("email=").append(idToken.getEmail()).append(";");
+            sb.append("emailVerified=").append(idToken.getEmailVerified()).append(";");
+            sb.append("gender=").append(idToken.getGender()).append(";");
+            sb.append("birthdate=").append(idToken.getBirthdate()).append(";");
+            sb.append("zoneinfo=").append(idToken.getZoneinfo()).append(";");
+            sb.append("locale=").append(idToken.getLocale()).append(";");
+            sb.append("phoneNumber=").append(idToken.getPhoneNumber()).append(";");
+            sb.append("phoneNumberVerified=").append(idToken.getPhoneNumberVerified()).append(";");
+            //
+            sb.append("address=").append(idToken.getAddress()).append(";");
+            sb.append("updatedAt=").append(idToken.getUpdatedAt()).append(";");
+            sb.append("claimsLocales=").append(idToken.getClaimsLocales()).append(";");
+            sb.append("acr=").append(idToken.getAcr()).append(";");
+            //
+            sb.append("category=").append(idToken.getCategory()).append(";");
+        }
         sb.append(")");
     }
 
     private static void appendAccessToken(StringBuilder sb, KeycloakSecurityContext ksc) {
         AccessToken accessToken = ksc.getToken();
         sb.append("AccessToken(");
-        sb.append("roles=").append(accessToken.getRealmAccess().getRoles()).append(";");
-        sb.append("resourceAccess=").append(accessToken.getResourceAccess()).append(";");
-        sb.append("isVerifyCaller=").append(accessToken.isVerifyCaller()).append(";");
-        sb.append("allowedOrigins=").append(accessToken.getAllowedOrigins()).append(";");
-        sb.append("authorization=").append(accessToken.getAuthorization()).append(";");
-        sb.append("scope=").append(accessToken.getScope()).append(";");
-               Map<String, AccessToken.Access> resourceAccess = accessToken.getResourceAccess()
-               for (Map.Entry<String, AccessToken.Access> entry: resourceAccess.entrySet()) {
-                       sb.append("Resource(").append(entry.getKey()).append(")");
-                       appendAccessTokenAccess(sb, entry.getValue());
-                       sb.append(";");
-               }
-        sb.append("otherClaims=").append(accessToken.getOtherClaims()).append(";");
-        appendAccessTokenAccess(sb.append("Realm"), accessToken.getRealmAccess());
-        sb.append(";");
-        appendAccessTokenAuthorization(sb, accessToken.getAuthorization());
-        sb.append(";");
-        appendAccessTokenCertConf(sb, accessToken.getCertConf());
+        renderIDToken(sb, accessToken);
+        if (accessToken != null) {
+            sb.append("roles=").append(accessToken.getRealmAccess().getRoles()).append(";");
+            sb.append("resourceAccess=").append(accessToken.getResourceAccess()).append(";");
+            sb.append("isVerifyCaller=").append(accessToken.isVerifyCaller()).append(";");
+            sb.append("allowedOrigins=").append(accessToken.getAllowedOrigins()).append(";");
+            sb.append("authorization=").append(accessToken.getAuthorization()).append(";");
+            sb.append("scope=").append(accessToken.getScope()).append(";");
+                   Map<String, AccessToken.Access> resourceAccess = accessToken.getResourceAccess()
+                   for (Map.Entry<String, AccessToken.Access> entry: resourceAccess.entrySet()) {
+                           sb.append("Resource(").append(entry.getKey()).append(")");
+                           appendAccessTokenAccess(sb, entry.getValue());
+                           sb.append(";");
+                   }
+            sb.append("otherClaims=").append(accessToken.getOtherClaims()).append(";");
+            appendAccessTokenAccess(sb.append("Realm"), accessToken.getRealmAccess());
+            sb.append(";");
+            appendAccessTokenAuthorization(sb, accessToken.getAuthorization());
+            sb.append(";");
+            appendAccessTokenCertConf(sb, accessToken.getCertConf());
+        }
         sb.append(")");
     }
 

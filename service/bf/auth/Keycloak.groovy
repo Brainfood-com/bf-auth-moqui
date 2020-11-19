@@ -21,8 +21,8 @@ import org.keycloak.representations.IDToken;
 @Field Logger logger = LoggerFactory.getLogger(getClass().getName())
 @Field Timestamp now = context.ec.user.nowTimestamp
 
-@Field Map<String, String> keycloakGroupMap = [
-    '/super-admin': 'ADMIN',
+@Field Map<String, String> keycloakAccessMap = [
+    'admin': 'ADMIN',
 ]
 
 private void updateIf(String serviceName, EntityValue entity, Map<String, Object> fields) {
@@ -53,7 +53,7 @@ public Map<String, Object> importKeycloakUser() {
     if (ksc == null) return [:]
     //return [:]
 
-    IDToken idToken = ksc.getIdToken()
+    IDToken idToken = ksc.getToken()
     String keycloakUserId = idToken.getSubject()
 
     EntityValue userAccount = ec.entity.find('UserAccount').condition(['username': keycloakUserId, isAuthAccount: 'Y']).one()
@@ -142,12 +142,16 @@ public Map<String, Object> importKeycloakUser() {
                        ]).createOrUpdate()
                }
        }
-    // Map groups
-    List<String> groups = ksc.getToken().getOtherClaims()['groups']
-    for (Map.Entry<String, String> keycloakGroupMapEntry: keycloakGroupMap.entrySet()) {
-        String keycloakGroupName = keycloakGroupMapEntry.getKey()
-        String moquiGroupName = keycloakGroupMapEntry.getValue()
-        if (groups != null && groups.contains(keycloakGroupName)) {
+    // Map access
+    AccessToken accessToken = ksc.getToken()
+    AccessToken.Access moquiAccess = accessToken.getResourceAccess()['moqui']
+    Set<String> moquiRoles = moquiAccess.getRoles()
+    logger.info("moqui roles=" + moquiRoles)
+
+    for (Map.Entry<String, String> keycloakAccessMapEntry: keycloakAccessMap.entrySet()) {
+        String keycloakRoleName = keycloakAccessMapEntry.getKey()
+        String moquiGroupName = keycloakAccessMapEntry.getValue()
+        if (moquiRoles != null && moquiRoles.contains(keycloakRoleName)) {
             EntityList accountGroups = ec.entity.find('UserGroupMember').condition([
                 userGroupId: moquiGroupName,
                 userId: userAccount.userId,
