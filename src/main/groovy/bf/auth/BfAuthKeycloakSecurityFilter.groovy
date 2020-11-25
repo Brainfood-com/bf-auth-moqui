@@ -91,7 +91,10 @@ public class BfAuthKeycloakSecurityFilter implements Filter {
     }
 
     private static void appendAccessToken(StringBuilder sb, KeycloakSecurityContext ksc) {
-        AccessToken accessToken = ksc.getToken();
+        renderAccessToken(sb, ksc.getToken());
+    }
+
+    private static void renderAccessToken(StringBuilder sb, AccessToken accessToken) {
         sb.append("AccessToken(");
         renderIDToken(sb, accessToken);
         if (accessToken != null) {
@@ -104,20 +107,20 @@ public class BfAuthKeycloakSecurityFilter implements Filter {
                    Map<String, AccessToken.Access> resourceAccess = accessToken.getResourceAccess()
                    for (Map.Entry<String, AccessToken.Access> entry: resourceAccess.entrySet()) {
                            sb.append("Resource(").append(entry.getKey()).append(")");
-                           appendAccessTokenAccess(sb, entry.getValue());
+                           renderAccessTokenAccess(sb, entry.getValue());
                            sb.append(";");
                    }
             sb.append("otherClaims=").append(accessToken.getOtherClaims()).append(";");
-            appendAccessTokenAccess(sb.append("Realm"), accessToken.getRealmAccess());
+            renderAccessTokenAccess(sb.append("Realm"), accessToken.getRealmAccess());
             sb.append(";");
-            appendAccessTokenAuthorization(sb, accessToken.getAuthorization());
+            renderAccessTokenAuthorization(sb, accessToken.getAuthorization());
             sb.append(";");
-            appendAccessTokenCertConf(sb, accessToken.getCertConf());
+            renderAccessTokenCertConf(sb, accessToken.getCertConf());
         }
         sb.append(")");
     }
 
-    private static void appendAccessTokenAccess(StringBuilder sb, AccessToken.Access access) {
+    private static void renderAccessTokenAccess(StringBuilder sb, AccessToken.Access access) {
         sb.append("Access(");
         if (access != null) {
             sb.append("roles=").append(access.getRoles()).append(";");
@@ -126,7 +129,7 @@ public class BfAuthKeycloakSecurityFilter implements Filter {
         sb.append(")");
     }
 
-    private static void appendAccessTokenAuthorization(StringBuilder sb, AccessToken.Authorization authorization) {
+    private static void renderAccessTokenAuthorization(StringBuilder sb, AccessToken.Authorization authorization) {
         sb.append("Authorization(");
         if (authorization != null) {
             sb.append("permissions=").append(authorization.getPermissions()).append(";");
@@ -134,7 +137,7 @@ public class BfAuthKeycloakSecurityFilter implements Filter {
         sb.append(")");
     }
 
-    private static void appendAccessTokenCertConf(StringBuilder sb, AccessToken.CertConf certConf) {
+    private static void renderAccessTokenCertConf(StringBuilder sb, AccessToken.CertConf certConf) {
         sb.append("CertConf(");
         if (certConf != null) {
             sb.append("certThumbprint=").append(certConf.getCertThumbprint()).append(";");
