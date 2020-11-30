@@ -11,6 +11,7 @@ import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import org.moqui.Moqui;
@@ -20,6 +21,21 @@ import org.moqui.util.ObjectUtilities;
 
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
+import org.keycloak.adapters.KeycloakDeployment;
+import org.keycloak.adapters.KeycloakDeploymentBuilder;
+
+
+import org.keycloak.adapters.AdapterDeploymentContext;
+import org.keycloak.adapters.AuthenticatedActionsHandler;
+import org.keycloak.adapters.KeycloakConfigResolver;
+import org.keycloak.adapters.NodesRegistrationManagement;
+import org.keycloak.adapters.PreAuthActionsHandler;
+import org.keycloak.adapters.spi.AuthChallenge;
+import org.keycloak.adapters.spi.AuthOutcome;
+import org.keycloak.adapters.spi.InMemorySessionIdMapper;
+import org.keycloak.adapters.spi.SessionIdMapper;
+import org.keycloak.adapters.spi.UserSessionManagement;
+
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +45,10 @@ import org.apache.shiro.authc.UsernamePasswordToken;
 import org.apache.shiro.subject.SimplePrincipalCollection;
 import org.apache.shiro.subject.Subject;
 import org.apache.shiro.subject.support.DefaultSubjectContext;
+
+import org.keycloak.adapters.servlet.OIDCServletHttpFacade;
+import org.keycloak.adapters.servlet.OIDCFilterSessionStore;
+import org.keycloak.adapters.servlet.FilterRequestAuthenticator;
 /*
 
 
@@ -91,7 +111,10 @@ public class BfAuthKeycloakSecurityFilter implements Filter {
     }
 
     private static void appendAccessToken(StringBuilder sb, KeycloakSecurityContext ksc) {
-        AccessToken accessToken = ksc.getToken();
+        renderAccessToken(sb, ksc.getToken());
+    }
+
+    private static void renderAccessToken(StringBuilder sb, AccessToken accessToken) {
         sb.append("AccessToken(");
         renderIDToken(sb, accessToken);
         if (accessToken != null) {
@@ -104,20 +127,20 @@ public class BfAuthKeycloakSecurityFilter implements Filter {
                    Map<String, AccessToken.Access> resourceAccess = accessToken.getResourceAccess()
                    for (Map.Entry<String, AccessToken.Access> entry: resourceAccess.entrySet()) {
                            sb.append("Resource(").append(entry.getKey()).append(")");
-                           appendAccessTokenAccess(sb, entry.getValue());
+                           renderAccessTokenAccess(sb, entry.getValue());
                            sb.append(";");
                    }
             sb.append("otherClaims=").append(accessToken.getOtherClaims()).append(";");
-            appendAccessTokenAccess(sb.append("Realm"), accessToken.getRealmAccess());
+            renderAccessTokenAccess(sb.append("Realm"), accessToken.getRealmAccess());
             sb.append(";");
-            appendAccessTokenAuthorization(sb, accessToken.getAuthorization());
+            renderAccessTokenAuthorization(sb, accessToken.getAuthorization());
             sb.append(";");
-            appendAccessTokenCertConf(sb, accessToken.getCertConf());
+            renderAccessTokenCertConf(sb, accessToken.getCertConf());
         }
         sb.append(")");
     }
 
-    private static void appendAccessTokenAccess(StringBuilder sb, AccessToken.Access access) {
+    private static void renderAccessTokenAccess(StringBuilder sb, AccessToken.Access access) {
         sb.append("Access(");
         if (access != null) {
             sb.append("roles=").append(access.getRoles()).append(";");
@@ -126,7 +149,7 @@ public class BfAuthKeycloakSecurityFilter implements Filter {
         sb.append(")");
     }
 
-    private static void appendAccessTokenAuthorization(StringBuilder sb, AccessToken.Authorization authorization) {
+    private static void renderAccessTokenAuthorization(StringBuilder sb, AccessToken.Authorization authorization) {
         sb.append("Authorization(");
         if (authorization != null) {
             sb.append("permissions=").append(authorization.getPermissions()).append(";");
@@ -134,7 +157,7 @@ public class BfAuthKeycloakSecurityFilter implements Filter {
         sb.append(")");
     }
 
-    private static void appendAccessTokenCertConf(StringBuilder sb, AccessToken.CertConf certConf) {
+    private static void renderAccessTokenCertConf(StringBuilder sb, AccessToken.CertConf certConf) {
         sb.append("CertConf(");
         if (certConf != null) {
             sb.append("certThumbprint=").append(certConf.getCertThumbprint()).append(";");
@@ -168,7 +191,57 @@ public class BfAuthKeycloakSecurityFilter implements Filter {
         }
     }
 
+    protected KeycloakDeployment getKeycloakDeployment() {
+        ExecutionContext ec = Moqui.getExecutionContext();
+        InputStream configStream = ec.getResource().getLocationStream("component://bf-auth/config/bf-auth-moqui-keycloak.json");
+        return KeycloakDeploymentBuilder.build(configStream);
+    }
+
+    protected SessionIdMapper idMapper = new InMemorySessionIdMapper()
+
     public void doFilter(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws IOException, ServletException {
+        OIDCServletHttpFacade facade = new OIDCServletHttpFacade(request, response)
+        KeycloakDeployment keycloakDeployment = getKeycloakDeployment()
+        OIDCFilterSessionStore tokenStore = new OIDCFilterSessionStore(request, facade, 100000, keycloakDeployment, idMapper)
+        // TODO: Look at the PolicyEnforcer stuff in keycloak, perhaps hook into that for moqui
+        // if the thing being called doesn't require AUTH, then the enforcer should return AUTHENTICATED?
+        FilterRequestAuthenticator authenticator = new FilterRequestAuthenticator(keycloakDeployment, tokenStore, facade, request, 8443)
+        AuthOutcome outcome = authenticator.authenticate()
+        if (outcome == AuthOutcome.AUTHENTICATED) {
+            logger.info("AUTHENTICATED");
+            if (facade.isEnded()) {
+                return;
+            }
+            AuthenticatedActionsHandler actions = new AuthenticatedActionsHandler(keycloakDeployment, facade);
+            if (actions.handledRequest()) {
+                return;
+            } else {
+                HttpServletRequestWrapper wrapper = tokenStore.buildWrapper();
+                postKeycloakFilter(wrapper, response, chain);
+                return;
+            }
+        }
+        AuthChallenge challenge = authenticator.getChallenge();
+        if (challenge != null) {
+            logger.info("challenge");
+            if (request.getRequestURI().equals('/Login')) {
+                challenge.challenge(facade);
+                return;
+            }
+            if (request.getMethod().equals('GET')) {
+                challenge.challenge(facade);
+                return;
+            }
+            // TODO
+            //challenge.challenge(facade);
+            //return;
+        }
+        // TODO
+        // sendError(403)
+        postKeycloakFilter(request, response, chain);
+    }
+
+    protected void postKeycloakFilter(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws IOException, ServletException {
         // Can also look at the session if needed
         KeycloakSecurityContext ksc = (KeycloakSecurityContext) request.getAttribute(KeycloakSecurityContext.class.getName());
         logger.info("doFilter(" + ksc + ")");

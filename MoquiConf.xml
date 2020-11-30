@@ -6,11 +6,14 @@
     </tools>
     <webapp-list>
         <webapp name="webroot">
+                <!--
             <filter name="KeycloakSecurityFilter" class="org.keycloak.adapters.servlet.KeycloakOIDCFilter">
                 <init-param name="keycloak.config.resolver" value="bf.auth.BfAuthKeycloakConfigResolver"/>
+                <init-param name="keycloak.config.skipPattern" value="^/rest/s1/alyvr/.*"/>
                 <url-pattern>/*</url-pattern>
                 <dispatcher>REQUEST</dispatcher>
             </filter>
+                -->
             <filter name="BfAuthKeycloakSecurityFilter" class="bf.auth.BfAuthKeycloakSecurityFilter">
                 <init-param name="keycloak.config.resolver" value="bf.auth.BfAuthKeycloakConfigResolver"/>
                 <url-pattern>/*</url-pattern>
