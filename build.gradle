@@ -25,7 +25,7 @@ version = componentNode.'@version'
 repositories {
     flatDir name: 'localLib', dirs: frameworkDir.absolutePath + '/lib'
     flatDir name: 'librepo', dirs: projectDir.absolutePath + '/librepo'
-    jcenter()
+    mavenCentral()
 }
 
 // Log4J has annotation processors, disable to avoid warning
