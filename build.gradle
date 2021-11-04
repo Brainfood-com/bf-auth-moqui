@@ -34,7 +34,7 @@ tasks.withType(GroovyCompile) { options.compilerArgs << "-proc:none" }
 
 dependencies {
     compile project(':framework')
-    compile 'org.keycloak:keycloak-servlet-filter-adapter:5.0.0'
+    compile 'org.keycloak:keycloak-servlet-filter-adapter:15.0.2'
 }
 
 task cleanLib(type: Delete) { delete fileTree(dir: projectDir.absolutePath+'/lib', include: '*') }
