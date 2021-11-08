@@ -208,7 +208,6 @@ public class BfAuthKeycloakSecurityFilter implements Filter {
         FilterRequestAuthenticator authenticator = new FilterRequestAuthenticator(keycloakDeployment, tokenStore, facade, request, 8443)
         AuthOutcome outcome = authenticator.authenticate()
         if (outcome == AuthOutcome.AUTHENTICATED) {
-            logger.info("AUTHENTICATED");
             if (facade.isEnded()) {
                 return;
             }
@@ -223,7 +222,6 @@ public class BfAuthKeycloakSecurityFilter implements Filter {
         }
         AuthChallenge challenge = authenticator.getChallenge();
         if (challenge != null) {
-            logger.info("challenge");
             if (request.getRequestURI().equals('/Login')) {
                 challenge.challenge(facade);
                 return;
@@ -244,7 +242,7 @@ public class BfAuthKeycloakSecurityFilter implements Filter {
     protected void postKeycloakFilter(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws IOException, ServletException {
         // Can also look at the session if needed
         KeycloakSecurityContext ksc = (KeycloakSecurityContext) request.getAttribute(KeycloakSecurityContext.class.getName());
-        logger.info("doFilter(" + ksc + ")");
+        logger.debug("doFilter(" + ksc + ")");
         showKeycloakSecurityContext(ksc);
         //importKeycloakSecurityContext(ksc);
         String username = null;
@@ -255,7 +253,7 @@ public class BfAuthKeycloakSecurityFilter implements Filter {
                 // FIXME: This is bad, I don't know how to force a login without a password.
                 ec.user.loginUser('keycloak-api', 'moqui');
                 Map<String, Object> result = ec.service.sync().name("bf.auth.KeycloakServices.import#KeycloakUser").parameters([ksc: ksc]).call();
-                logger.info('result=' + result)
+                logger.debug('result=' + result)
                 username = result?.userAccount?.username
                 request.setAttribute('moqui.request.authenticated', 'true')
             } finally {

@@ -32,15 +32,15 @@ private void updateIf(String serviceName, EntityValue entity, Map<String, Object
             serviceContext[fieldsEntry.getKey()] = fieldsEntry.getValue()
         }
     }
-    logger.info('updateIf(' + serviceName + '):' + serviceContext)
+    //logger.info('updateIf(' + serviceName + '):' + serviceContext)
     if (serviceContext.isEmpty()) {
-        logger.info('serviceContext is empty')
+        //logger.info('serviceContext is empty')
         return
     }
     serviceContext.putAll(entity.getPrimaryKeys())
     try {
         Map<String, Object> result = ec.service.sync().name(serviceName).parameters(serviceContext).call()
-        logger.info('update result=' + result)
+        //logger.info('update result=' + result)
     } catch (Exception e) {
         e.printStackTrace()
     }
@@ -80,7 +80,7 @@ public Map<String, Object> importKeycloakUser() {
         userAccount.update()
         logger.info('created Party:' + partyId)
     } else {
-        logger.info('found Party:' + partyId)
+        //logger.info('found Party:' + partyId)
     }
 
     person = ec.entity.find('Person').condition('partyId', partyId).one()
@@ -90,7 +90,7 @@ public Map<String, Object> importKeycloakUser() {
         ]).createOrUpdate()
         logger.info('created Person:' + partyId)
     } else {
-        logger.info('found Person:' + partyId)
+        //logger.info('found Person:' + partyId)
     }
     updateIf('update#Person', person, [
         firstName: idToken.getGivenName(),
@@ -106,7 +106,7 @@ public Map<String, Object> importKeycloakUser() {
                emailToCMId[email] = null
        }
     EntityList partyCMs = ec.entity.find('mantle.party.contact.PartyContactMechInfo').condition([
-        partyd: partyId,
+        partyId: partyId,
         contactMechTypeEnumId: 'CmtEmailAddress',
                contactMechPurposeId: 'BF_AUTH',
     ]).conditionDate('fromDate', 'thruDate', now).list()
@@ -122,6 +122,11 @@ public Map<String, Object> importKeycloakUser() {
                                                partyId: partyCM.partyId,
                                                contactMechPurposeId: 'BF_AUTH',
                                                fromDate: partyCM.fromDate,
+                                       ]).updateAll([thruDate: now])
+                                       ec.entity.find('mantle.party.contact.PartyContactMech').condition([
+                                               contactMechId: partyCM.contactMechId,
+                                               partyId: partyCM.partyId,
+                                               contactMechPurposeId: 'EmailPrimary',
                                        ]).updateAll([thruDate: now])
                                }
                 break
@@ -142,6 +147,21 @@ public Map<String, Object> importKeycloakUser() {
                        ]).createOrUpdate()
                }
        }
+    EntityList partyCMsPrimary = ec.entity.find('mantle.party.contact.PartyContactMechInfo').condition([
+        partyId: partyId,
+        contactMechTypeEnumId: 'CmtEmailAddress',
+               contactMechPurposeId: 'EmailPrimary',
+    ]).conditionDate('fromDate', 'thruDate', now).list()
+	//logger.info('partyCMsPrimary(' + partyId + '):' + partyCMsPrimary)
+    if (partyCMsPrimary.isEmpty()) {
+	   ec.entity.makeValue('mantle.party.contact.PartyContactMech').setAll([
+			   partyId: partyId,
+			   contactMechId: emailToCMId[idToken.getEmail()],
+			   contactMechPurposeId: 'EmailPrimary',
+			   fromDate: now,
+	   ]).createOrUpdate()
+	}
+
     // Map access
     AccessToken accessToken = ksc.getToken()
     AccessToken.Access moquiAccess = accessToken.getResourceAccess()['moqui']
@@ -164,7 +184,7 @@ public Map<String, Object> importKeycloakUser() {
                 ]).create()
                 logger.info("add user(" + userAccount.userId + ") to group: " + moquiGroupName)
             } else {
-                logger.info("user(" + userAccount.userId + ") is already a member of: " + moquiGroupName)
+                //logger.info("user(" + userAccount.userId + ") is already a member of: " + moquiGroupName)
             }
         } else {
             ec.entity.find('UserGroupMember').condition([

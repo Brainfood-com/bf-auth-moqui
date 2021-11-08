@@ -19,9 +19,9 @@ along with this software (see the LICENSE.md file). If not, see
         name="bf-auth" displayName="BF Auth REST API" version="1.0.0"
         description="Brainfood Auth">
 
-    <resource name="connect" require-authentication="anonymous-all">
-        <method type="get" require-authentication="anonymous-all">
-            <service name="bf.auth.AuthServices.connect" require-authentication="anonymous-all"/>
+    <resource name="connect" _require-authentication="anonymous-all">
+        <method type="get" _require-authentication="anonymous-all">
+            <service name="bf.auth.AuthServices.connect" _require-authentication="anonymous-all"/>
         </method>
     </resource>
 

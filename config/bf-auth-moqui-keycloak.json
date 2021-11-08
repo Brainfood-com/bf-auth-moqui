@@ -4,7 +4,7 @@
 
   "realm": "${env.BF_AUTH_MOQUI_KEYCLOAK_REALM}",
   "disable-trust-manager": true,
-  "auth-server-url": "${env.BF_AUTH_MOQUI_KEYCLOAK_URL}",
+  "auth-server-url": "http://keycloak-http.default.svc.cluster.local:80/auth",
   "ssl-required": "external",
   "resource": "${env.BF_AUTH_MOQUI_KEYCLOAK_CLIENT_ID}",
   "confidential-port": 0,
