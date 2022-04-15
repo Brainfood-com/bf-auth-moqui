@@ -83,6 +83,11 @@ public Map<String, Object> importKeycloakUser() {
         //logger.info('found Party:' + partyId)
     }
 
+    ec.entity.makeValue('PartyRole').setAll([
+        partyId: partyId,
+        roleTypeId: 'Customer',
+    ]).createOrUpdate()
+
     person = ec.entity.find('Person').condition('partyId', partyId).one()
     if (person == null) {
         person = ec.entity.makeValue('Person').setAll([
