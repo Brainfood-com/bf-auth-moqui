@@ -14,17 +14,11 @@
 
 apply plugin: 'groovy'
 
-sourceCompatibility = '1.8'
-targetCompatibility = '1.8'
-def moquiDir = projectDir.parentFile.parentFile.parentFile
+def moquiDir = file(projectDir.absolutePath + '/../../..')
 def frameworkDir = file(moquiDir.absolutePath + '/framework')
-def componentNode = parseComponent(project)
-version = componentNode.'@version'
 
-// maybe in the future: repositories { mavenCentral() }
 repositories {
     flatDir name: 'localLib', dirs: frameworkDir.absolutePath + '/lib'
-    flatDir name: 'librepo', dirs: projectDir.absolutePath + '/librepo'
     mavenCentral()
 }
 
@@ -33,24 +27,11 @@ tasks.withType(JavaCompile) { options.compilerArgs << "-proc:none" }
 tasks.withType(GroovyCompile) { options.compilerArgs << "-proc:none" }
 
 dependencies {
-    compile project(':framework')
-    compile 'org.keycloak:keycloak-servlet-filter-adapter:15.0.2'
+    implementation project(':framework')
+    implementation 'org.keycloak:keycloak-servlet-filter-adapter:15.0.2'
 }
-
-task cleanLib(type: Delete) { delete fileTree(dir: projectDir.absolutePath+'/lib', include: '*') }
 
 // by default the Java plugin runs test on build, change to not do that (only run test if explicit task)
 // no longer workds as of gradle 4.8 or possibly earlier, use clear() instead: check.dependsOn.remove(test)
 check.dependsOn.clear()
 
-jar {
-    destinationDir = file(projectDir.absolutePath + '/lib')
-    baseName = componentNode.'@name'
-}
-
-task copyDependencies { doLast {
-    copy { from (configurations.runtime - project(':framework').configurations.runtime - project(':framework').jar.archivePath)
-        into file(projectDir.absolutePath + '/lib') }
-} }
-copyDependencies.dependsOn cleanLib
-jar.dependsOn copyDependencies
