@@ -172,7 +172,7 @@ public Map<String, Object> importKeycloakUser() {
     AccessToken accessToken = ksc.getToken()
     AccessToken.Access moquiAccess = accessToken.getResourceAccess()['moqui']
     Set<String> moquiRoles = moquiAccess.getRoles()
-    logger.info("moqui roles=" + moquiRoles)
+    //logger.info("moqui roles=" + moquiRoles)
 
     for (Map.Entry<String, String> keycloakAccessMapEntry: keycloakAccessMap.entrySet()) {
         String keycloakRoleName = keycloakAccessMapEntry.getKey()
