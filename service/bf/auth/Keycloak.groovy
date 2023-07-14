@@ -9,6 +9,7 @@ import org.moqui.entity.EntityFind
 import org.moqui.entity.EntityList
 import org.moqui.entity.EntityValue
 import org.moqui.util.ObjectUtilities
+import org.moqui.util.RestClient
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -205,3 +206,58 @@ public Map<String, Object> importKeycloakUser() {
                userAccount: userAccount,
        ]
 }
+
+protected Map<String, Object> tokenExchange(String label, Map<String, String> params) {
+    String realm = System.getenv()['BF_AUTH_MOQUI_KEYCLOAK_REALM']
+    String clientId = System.getenv()['BF_AUTH_MOQUI_KEYCLOAK_CLIENT_ID']
+    String clientSecret = System.getenv()['BF_AUTH_MOQUI_KEYCLOAK_CLIENT_SECRET']
+
+    RestClient rc = new RestClient()
+    rc.uri("http://keycloak-http.default.svc.cluster.local:80/auth/realms/${realm}/protocol/openid-connect/token")
+    rc.method('post')
+    rc.contentType('application/x-www-form-urlencoded;charset=UTF-8')
+    rc.text(RestClient.parametersMapToString(params + [
+        client_id: clientId,
+        client_secret: clientSecret,
+    ]))
+    RestClient.RestResponse response = rc.call()
+    response.checkError()
+    def result = response.jsonObject()
+    logger.info('result:' + result)
+    return result
+}
+
+protected String getCurrentTokenString() {
+    KeycloakSecurityContext ksc = (KeycloakSecurityContext) ec.web.request.getAttribute(KeycloakSecurityContext.class.getName())
+    if (ksc == null) throw new Exception("No KeycloakSecurityContext")
+    return ksc.getTokenString()
+}
+
+protected Map<String, Object> adjustTokenForClient(Collection<String> scopes) {
+    return tokenExchange('adjust', [
+      grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+      subject_token: getCurrentTokenString(),
+      requested_token_type: 'urn:ietf:params:oauth:token-type:refresh_token',
+      audience: System.getenv()['BF_AUTH_MOQUI_KEYCLOAK_CLIENT_ID'],
+      scope: 'openid' + scopes.collect(scope -> " ${scope}").join(''),
+    ])
+}
+
+public Map<String, Object> getOfflineRefreshToken() {
+    Map<String, Object> result = adjustTokenForClient(['offline_access'])
+    return [
+        refreshToken: result.refresh_token,
+    ]
+}
+
+public Map<String, Object> refreshToken() {
+    String refreshToken = ec.context.refreshToken
+    Map<String, Object> result = tokenExchange('refreshToken', [
+        grant_type: 'refresh_token',
+        refresh_token: refreshToken,
+    ])
+    return [
+        accessToken: result.access_token,
+    ]
+}
+

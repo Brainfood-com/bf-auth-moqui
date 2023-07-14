@@ -18,4 +18,17 @@ along with this software (see the LICENSE.md file). If not, see
             <parameter name="ksc" type="Object" required="true"/>
         </in-parameters>
     </service>
+    <service verb="get" noun="OfflineRefreshToken" type="script" location="component://bf-auth/service/bf/auth/Keycloak.groovy" method="getOfflineRefreshToken">
+        <out-parameters>
+            <parameter name="refreshToken" type="String" required="true"/>
+        </out-parameters>
+    </service>
+    <service verb="refresh" noun="Token" type="script" location="component://bf-auth/service/bf/auth/Keycloak.groovy" method="refreshToken">
+        <in-parameters>
+            <parameter name="refreshToken" type="String" required="true"/>
+        </in-parameters>
+        <out-parameters>
+            <parameter name="accessToken" type="String" required="true"/>
+        </out-parameters>
+    </service>
 </services>
