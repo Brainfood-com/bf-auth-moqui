@@ -179,7 +179,7 @@ public class BfAuthKeycloakSecurityFilter implements Filter {
         sb.append(", ");
         appendAccessToken(sb, ksc);
 
-        logger.info(" sb=" + sb);
+        logger.debug(" sb=" + sb);
     }
 
     @Override
