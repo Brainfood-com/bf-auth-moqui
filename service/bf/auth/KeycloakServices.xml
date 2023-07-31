@@ -23,7 +23,7 @@ along with this software (see the LICENSE.md file). If not, see
             <parameter name="refreshToken" type="String" required="true"/>
         </out-parameters>
     </service>
-    <service verb="refresh" noun="Token" type="script" location="component://bf-auth/service/bf/auth/Keycloak.groovy" method="refreshToken">
+    <service verb="refresh" noun="Token" type="script" location="component://bf-auth/service/bf/auth/Keycloak.groovy" method="refreshToken" authenticate="anonymous-all">
         <in-parameters>
             <parameter name="refreshToken" type="String" required="true"/>
         </in-parameters>
