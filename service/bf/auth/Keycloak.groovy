@@ -207,6 +207,20 @@ public Map<String, Object> importKeycloakUser() {
        ]
 }
 
+public String parametersMapToString(Map<String, ?> parameters) throws UnsupportedEncodingException {
+    if (parameters == null || parameters.size() == 0) return null;
+    StringBuilder query = new StringBuilder();
+    for (Map.Entry<String, ?> parm : parameters.entrySet()) {
+        if (query.length() > 0) query.append("&");
+        Object valueObj = parm.getValue();
+        if (valueObj == null) continue;
+        String valueStr = ObjectUtilities.toPlainString(valueObj);
+        query.append(URLEncoder.encode(parm.getKey(), "UTF-8"))
+                .append("=").append(URLEncoder.encode(valueStr, "UTF-8"));
+    }
+    return query.toString();
+}
+
 protected Map<String, Object> tokenExchange(String label, Map<String, String> params) {
     String realm = System.getenv()['BF_AUTH_MOQUI_KEYCLOAK_REALM']
     String clientId = System.getenv()['BF_AUTH_MOQUI_KEYCLOAK_CLIENT_ID']
@@ -216,14 +230,14 @@ protected Map<String, Object> tokenExchange(String label, Map<String, String> pa
     rc.uri("http://keycloak-http.default.svc.cluster.local:80/auth/realms/${realm}/protocol/openid-connect/token")
     rc.method('post')
     rc.contentType('application/x-www-form-urlencoded;charset=UTF-8')
-    rc.text(RestClient.parametersMapToString(params + [
+    rc.text(parametersMapToString(params + [
         client_id: clientId,
         client_secret: clientSecret,
     ]))
     RestClient.RestResponse response = rc.call()
     response.checkError()
     def result = response.jsonObject()
-    logger.info('result:' + result)
+    //logger.info('result:' + result)
     return result
 }
 
@@ -239,7 +253,7 @@ protected Map<String, Object> adjustTokenForClient(Collection<String> scopes) {
       subject_token: getCurrentTokenString(),
       requested_token_type: 'urn:ietf:params:oauth:token-type:refresh_token',
       audience: System.getenv()['BF_AUTH_MOQUI_KEYCLOAK_CLIENT_ID'],
-      scope: 'openid' + scopes.collect(scope -> " ${scope}").join(''),
+      scope: 'openid' + scopes.collect({scope -> " ${scope}"}).join(''),
     ])
 }
 
